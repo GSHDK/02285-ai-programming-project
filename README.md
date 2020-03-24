@@ -4,7 +4,7 @@ Programming project for DTU course 02285 Artificial Intelligence and Multi-Agent
 
 To run the program use the following code in the correct dir:
 
-java -jar ./server.jar -l ./levels/MABlinky.lvl -c "python3 searchclient.py"
+java -jar ./server.jar -l ./levels/MABlinky.lvl -c "python3 main.py"
 
 A print statement should look like this:
 
