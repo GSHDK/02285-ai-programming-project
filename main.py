@@ -26,14 +26,8 @@ def main():
     if single_agent:
         raise Exception("Not implemented")
 
-
     # Read level and create the initial state of the problem.
     client = SearchClient(server_messages)
-
-
-
-
-
 
 
 

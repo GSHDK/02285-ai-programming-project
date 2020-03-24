@@ -43,8 +43,15 @@ class State:
     
     def is_initial_state(self) -> 'bool':
         return self.parent is None
+
+    def is_in_goal_location(self, goal, pos_tuple) -> 'bool':
+        if self.agents_goal[goal] == pos_tuple:
+            return True
+        else:
+            return False
+
     
-    def is_goal_state(self) -> 'bool':
+    def is_sub_goal_state(self) -> 'bool':
         for row in range(self.MAX_ROW):
             for col in range(self.MAX_COL):
                 goal = self.goals[row][col]
