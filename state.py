@@ -29,7 +29,7 @@ class State:
 
         self.agents_goal = defaultdict(tuple)
 
-        self.boxes_goal = defaultdict(str)
+        self.boxes_goal = defaultdict(list)
 
         self.boxes = defaultdict(list)
 

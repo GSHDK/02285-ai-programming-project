@@ -16,6 +16,7 @@ class SearchClient:
             # TO DO: Edit 70x70 init to work with 2**15 x 2**15 maps as described in problem formulation
             self.initial_state = State()
             line = server_messages.readline()
+
             # Get meta data
             while True:
 
@@ -31,8 +32,8 @@ class SearchClient:
                     self.initial_state.colors = {}
                     line = server_messages.readline()
                     while "#" not in [c for c in line]:
-                        current_color=line.split[':'][0]
-                        for x in line.split(':')[1].replace(' ','').split(','):
+                        current_color = line.split(':')[0]
+                        for x in line.split(':')[1].replace(' ','').strip('\n').split(','):
                             self.initial_state.colors[x] = current_color
                         line = server_messages.readline()
                     break
@@ -77,7 +78,6 @@ class SearchClient:
                     elif char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
                         self.initial_state.boxes_goal[char] = \
                             self.initial_state.boxes_goal[char].append([f'{row},{col}'])
-
                         self.initial_state.goal_positions[f'{row},{col}'] = char
                     elif char == ' ':
                         # Free cell.
