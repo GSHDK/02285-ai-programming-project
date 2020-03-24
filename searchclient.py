@@ -13,6 +13,7 @@ class SearchClient:
 
         try:
             # Read lines for level.
+            # TO DO: Edit 70x70 init to work with 2**15 x 2**15 maps as described in problem formulation
             self.initial_state = State()
             line = server_messages.readline()
             # Get meta data
@@ -27,10 +28,12 @@ class SearchClient:
                     self.initial_state.levelname = line
 
                 elif line == "#colors\n":
-                    colors = []
+                    self.initial_state.colors = {}
                     line = server_messages.readline()
                     while "#" not in [c for c in line]:
-                        colors.append(line)
+                        current_color=line.split[':'][0]
+                        for x in line.split(':')[1].replace(' ','').split(','):
+                            self.initial_state.colors[x] = current_color
                         line = server_messages.readline()
                     break
                 line = server_messages.readline()
@@ -43,13 +46,11 @@ class SearchClient:
             while line != "#goal\n":
                 for col, char in enumerate(line):
                     if char == '+':
-                        self.initial_state.walls[row][col] = True
+                        self.initial_state.walls[f'{row},{col}'] = True
                     elif char in "0123456789":
-                        self.initial_state.agents.append((char, [row, col]))
+                        self.initial_state.agents[f'{row},{col}'] = [self.initial_state.colors[char], char]
                     elif char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
-                        self.initial_state.boxes[row][col] = char
-                    elif char in "abcdefghijklmnopqrstuvwxyz":
-                        self.initial_state.goals[row][col] = char
+                        self.initial_state.boxes[f'{row},{col}'] = [self.initial_state.colors[char], char]
                     elif char == ' ':
                         # Free cell.
                         pass
@@ -71,11 +72,13 @@ class SearchClient:
                         # nothing to do
                         pass
                     elif char in "0123456789":
-                        self.initial_state.agents_goal.append((char, [row, col]))
+                        self.initial_state.agents_goal[char] = [f'{row},{col}']
+                        self.initial_state.goal_positions[f'{row},{col}'] = char
                     elif char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
-                        self.initial_state.boxes_goal.append((char,[row, col]))
-                    elif char in "abcdefghijklmnopqrstuvwxyz":
-                        pass
+                        self.initial_state.boxes_goal[char] = \
+                            self.initial_state.boxes_goal[char].append([f'{row},{col}'])
+
+                        self.initial_state.goal_positions[f'{row},{col}'] = char
                     elif char == ' ':
                         # Free cell.
                         pass

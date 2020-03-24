@@ -1,18 +1,12 @@
 import random
+from collections import defaultdict
 
 
 class State:
     _RNG = random.Random(1)
-    
-    #default values, so will not work for levels bigger than 70x70.
-    MAX_ROW = 70
-    MAX_COL = 70
-    
-    #Save static level information in shared arrays
-        #Data saved in 70x70 array but only loop through actual restrictions
-    walls = [[False for _ in range(70)] for _ in range(70)]
-    goals = [[None for _ in range(70)] for _ in range(70)]
-    
+
+    walls = defaultdict(bool)
+
     def __init__(self, copy: 'State' = None):
         '''
         If copy is None: Creates an empty State.
@@ -31,13 +25,15 @@ class State:
         Note: The state should be considered immutable after it has been hashed, e.g. added to a dictionary!
         '''
 
-        self.agents = []
-        self.agents_goal = []
-        self.boxes_goal = []
+        self.agents = defaultdict(list)
 
-        # self.walls = [[False for _ in range(State.MAX_COL)] for _ in range(State.MAX_ROW)]
-        self.boxes = [[None for _ in range(State.MAX_COL)] for _ in range(State.MAX_ROW)]
-        # self.goals = [[None for _ in range(State.MAX_COL)] for _ in range(State.MAX_ROW)]
+        self.agents_goal = defaultdict(tuple)
+
+        self.boxes_goal = defaultdict(str)
+
+        self.boxes = defaultdict(list)
+
+        self.goal_positions = defaultdict(list)
 
 
     

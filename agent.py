@@ -1,6 +1,8 @@
 from abc import ABCMeta, abstractmethod
 import sys
 import memory
+from collections import deque
+
 
 # Super class that all agent classes inharit functions form
 class Agent(metaclass=ABCMeta):
@@ -21,7 +23,10 @@ class search_agent(Agent):
         super().__init__()
         self.agent_id = agent_id
         self.agent_goal_task = agent_goal_task
-        self.plan = []
+
+        # Conflict only interacts with this one
+        self.plan = deque()
+
         self.heuristic = heuristic
         self.strategy = strategy
 
