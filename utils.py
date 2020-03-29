@@ -1,6 +1,6 @@
 
 
-def cityblock_distance(pos1,pos2):
+def cityblock_distance(pos1, pos2):
     '''
     :param pos1: Is a tuple of x,y coordinates
     :param pos2: Is a tuple of x,y coordinates

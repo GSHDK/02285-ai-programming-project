@@ -1,9 +1,12 @@
 import random
 from collections import defaultdict
+from action import ALL_ACTIONS, ActionType
+import re
 
 
 class State:
     _RNG = random.Random(1)
+    walls = defaultdict(bool)
 
     def __init__(self, copy: 'State' = None):
         '''
@@ -22,28 +25,40 @@ class State:
         
         Note: The state should be considered immutable after it has been hashed, e.g. added to a dictionary!
         '''
+        if copy is None:
+            # This defaultdict takes as input a string of coordinates an returns true if this posistion is a wall
+            self.walls = defaultdict(bool)
 
-        # This defaultdict takes as input a string of coordinates an returns true if this posistion is a wall
-        self.walls = defaultdict(bool)
+            # this defaultdict takes as input a string of coordinates and returns a list of size 2 with color,char of the agents
+            self.agents = defaultdict(list)
 
-        # this defaultdict takes as input a string of coordinates and returns a list of size 2 with color,char of the agents
-        self.agents = defaultdict(list)
+            # this default_dict takes as input an agent char an returns a list of string of coordinates with len one
+            self.agents_goal = defaultdict(list)
 
-        # this default_dict takes as input an agent char an returns a list of string of coordinates with len one
-        self.agents_goal = defaultdict(list)
+            # this default_dict takes as input the char of the box and returns a list of coordinates for that type of box
+            self.boxes_goal = defaultdict(list)
 
-        # this default_dict takes as input the char of the box and returns a list of coordinates for that type of box
-        self.boxes_goal = defaultdict(list)
+            # this defaultdict takes as input a string of coordinates and returns a list of size 2 with color,char of the box
+            self.boxes = defaultdict(list)
 
-        # this defaultdict takes as input a string of coordinates and returns a list of size 2 with color,char of the box
-        self.boxes = defaultdict(list)
+            # this default_dict takes as input a string of coordinates and returns a char corresponding to what element is
+            # in that position
+            self.goal_positions = defaultdict(str)
 
-        # this default_dict takes as input a string of coordinates and returns a char corresponding to what element is
-        # in that position
-        self.goal_positions = defaultdict(str)
+            self.parent = None
+            self.action = None
+            self.sub_goal_box = None
 
+            self.g = 0
 
-    
+            self.search_init = True
+        else:
+            self.parent = copy.parent
+            self.action = copy.action
+            self.agents = copy.agents
+            self.boxes = copy.boxes
+            self.search_init = False
+
     def is_initial_state(self) -> 'bool':
         return self.parent is None
 
@@ -53,21 +68,14 @@ class State:
         else:
             return False
 
+    def is_sub_goal_state(self, box_to: str, box_id: int) -> 'bool':
+        if box_to in self.boxes and self.boxes[box_to][2] == box_id:
+            return True
+        else:
+            return False
     
-    def is_sub_goal_state(self) -> 'bool':
-        for row in range(self.MAX_ROW):
-            for col in range(self.MAX_COL):
-                goal = self.goals[row][col]
-                box = self.boxes[row][col]
-                if goal is not None and (box is None or goal != box.lower()):
-                    return False
-        return True
-    
-    def is_free(self, row: 'int', col: 'int') -> 'bool':
-        return not self.walls[row][col] and self.boxes[row][col] is None
-    
-    def box_at(self, row: 'int', col: 'int') -> 'bool':
-        return self.boxes[row][col] is not None
+    def box_at(self, position: str) -> 'bool':
+        return position in self.boxes
     
     def extract_plan(self) -> '[State, ...]':
         plan = []
@@ -77,7 +85,81 @@ class State:
             state = state.parent
         plan.reverse()
         return plan
-    
+
+    def is_free(self, new_position: str) -> 'bool':
+        if self.search_init:
+            return new_position not in self.agents & new_position not in self.boxes & new_position not in self.walls
+        else:
+            return new_position not in self.walls
+
+    def _update_agent_location(self,old_location: str, new_location: str):
+        x = self.agents[old_location]
+        self.agents.pop(old_location)
+        self.agents[new_location] = x
+
+    def _update_box_location(self, old_location: str, new_location: str):
+        x = self.boxes[old_location]
+        self.boxes.pop(old_location)
+        self.boxes[new_location] = x
+
+    def get_children(self, agent_location) -> '[State, ...]':
+        '''
+        Returns a list of child states attained from applying every applicable action in the current state.
+        The order of the actions is random.
+        '''
+
+        children = []
+        old_agent_location = [int(x) for x in re.findall(r'\d+', agent_location)]
+        old_agent_location_string = f'{old_agent_location[0]},{old_agent_location[1]}'
+        for action in ALL_ACTIONS:
+            # Determine if action is applicable.
+            new_agent_position = [old_agent_location[0]+action.agent_dir.d_row,
+                                  old_agent_location[1]+action.agent_dir.d_col]
+            new_agent_location_string = f'{new_agent_position[0]},{new_agent_position[1]}'
+
+            new_agent_row = old_agent_location[0] + action.agent_dir.d_row
+            new_agent_col = old_agent_location[1] + action.agent_dir.d_col
+
+            if action.action_type is ActionType.Move:
+                if self.is_free(new_agent_location_string):
+                    child = State(self)
+                    child.parent = self
+                    child.action = action
+                    child.g += 1
+                    children.append(child)
+            elif action.action_type is ActionType.Push:
+                if self.box_at(new_agent_location_string) & self.boxes[new_agent_location_string][2] == self.sub_goal_box:
+                    new_box_location = f'{new_agent_position[0]+action.box_dir.d_row},{new_agent_position[1] + action.box_dir.d_col}'
+
+                    if self.is_free(new_box_location):
+                        child = State(self)
+                        child._update_agent_location(old_agent_location_string,new_agent_location_string)
+                        child._update_box_location(new_agent_location_string,new_box_location)
+                        child.parent = self
+                        child.action = action
+                        child.g += 1
+                        children.append(child)
+            elif action.action_type is ActionType.Pull:
+                if self.is_free(new_agent_location_string):
+                    old_box_location_string = f'{old_agent_location[0] + action.box_dir.d_row},{old_agent_location[1] + action.box_dir.d_col}'
+                    if self.box_at(old_box_location_string) & self.boxes[old_box_location_string][2] == self.sub_goal_box:
+                        child = State(self)
+                        child._update_agent_location(old_agent_location_string, new_agent_location_string)
+                        child._update_box_location(old_box_location_string, old_agent_location_string)
+                        child.parent = self
+                        child.action = action
+                        child.g += 1
+                        children.append(child)
+
+        State._RNG.shuffle(children)
+        return children
+
+    def reverse_agent_dict(self):
+        temp = defaultdict(list)
+        for key, value in self.agents.items():
+            temp[value[1]] = [value[0], key]
+        return temp
+
     def __hash__(self):
         if self._hash is None:
             prime = 31
@@ -93,10 +175,9 @@ class State:
     def __eq__(self, other):
         if self is other: return True
         if not isinstance(other, State): return False
-        if self.agent_row != other.agent_row: return False
-        if self.agent_col != other.agent_col: return False
+        if self.agents != other.agents: return False
         if self.boxes != other.boxes: return False
-        if self.goals != other.goals: return False
+        if self.goal_positions != other.goal_positions: return False
         if self.walls != other.walls: return False
         return True
     

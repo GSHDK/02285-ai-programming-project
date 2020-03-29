@@ -18,11 +18,13 @@ agent_goal_task
 (Box_name, (start_location, end_location)
 
 '''
+
+
 class search_agent(Agent):
 
-    def __init__(self, agent_id: int, agent_color: chr, agent_goal_task: str, heuristic, strategy):
+    def __init__(self, agent_char: int, agent_color: chr, agent_goal_task: str, heuristic, strategy):
         super().__init__()
-        self.agent_id = agent_id
+        self.agent_char = agent_char
         self.agent_color = agent_color
         self.agent_goal_task = agent_goal_task
 
@@ -35,11 +37,27 @@ class search_agent(Agent):
     def __repr__(self):
         return 'search agent'
 
-    def search(self, world_state: State):
-        self.world_state = world_state
+    def search_box(self, world_state: 'State', box_from, box_to):
+
+        if world_state.boxes[box_from][0] != self.agent_color:
+            raise Exception("Agent cannot move this box")
+
+        self.world_state = State(world_state)
         print('Starting search with strategy {}.'.format(self.strategy), file=sys.stderr, flush=True)
         strategy = self.strategy
-        strategy.add_to_frontier(self.initial_state)
+
+        # finding our initial location
+        for key, value in self.world_state.agents:
+            if value[1] == self.agent_char:
+                location = key
+
+        for key, value in self.world_state.boxes:
+            if key == box_from:
+                box_id = value[2]
+
+        self.world_state.sub_goal_box = box_id
+
+        strategy.add_to_frontier(self.world_state)
 
         iterations = 0
         while True:
@@ -56,8 +74,8 @@ class search_agent(Agent):
 
             leaf = strategy.get_and_remove_leaf()
 
-            if leaf.is_goal_state():
-                return leaf.extract_plan()
+            if leaf.is_sub_goal_state(box_to, box_id):
+                self._convert_plan_to_action_list(leaf.extract_plan())
 
             strategy.add_to_explored(leaf)
             for child_state in leaf.get_children():  # The list of expanded states is shuffled randomly; see state.py.
@@ -66,10 +84,11 @@ class search_agent(Agent):
 
             iterations += 1
 
+    def is_goal_location(self, leaf):
+        return False
 
-
-
-        # Calculate the execution
+    def search_location(self, world_state: State):
+        return False
 
     def execute_action(self):
         return False
@@ -78,5 +97,9 @@ class search_agent(Agent):
     def set_search_strategy(self, heuristic, strategy):
         self.heuristic = heuristic
         self.strategy = strategy
+
+    def _convert_plan_to_action_list(self, list_states: [State, ...]):
+        for state in list_states:
+            self.plan.append(state.action)
 
 
