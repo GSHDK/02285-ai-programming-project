@@ -44,6 +44,7 @@ class SearchClient:
                 raise Exception("Problem in parsing")
             line = server_messages.readline()
             row = 0
+            box_id = 0
             while line != "#goal\n":
                 for col, char in enumerate(line):
                     if char == '+':
@@ -51,7 +52,8 @@ class SearchClient:
                     elif char in "0123456789":
                         self.initial_state.agents[f'{row},{col}'] = [self.initial_state.colors[char], char]
                     elif char in "ABCDEFGHIJKLMNOPQRSTUVWXYZ":
-                        self.initial_state.boxes[f'{row},{col}'] = [self.initial_state.colors[char], char]
+                        self.initial_state.boxes[f'{row},{col}'] = [self.initial_state.colors[char], char, box_id]
+                        box_id += 1
                     elif char == ' ':
                         # Free cell.
                         pass

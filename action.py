@@ -35,7 +35,6 @@ class ActionType:
 ActionType.Move = ActionType('Move')
 ActionType.Push = ActionType('Push')
 ActionType.Pull = ActionType('Pull')
-ActionType.Pull = ActionType('NoOp')
 
 
 class Action:
@@ -67,4 +66,3 @@ for agent_dir in (Dir.N, Dir.S, Dir.E, Dir.W):
         if agent_dir is not box_dir:
             # If not same directions.
             ALL_ACTIONS.append(Action(ActionType.Pull, agent_dir, box_dir))
-
