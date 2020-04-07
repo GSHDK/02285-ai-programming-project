@@ -155,3 +155,16 @@ class search_agent(Agent):
         for state in list_states:
             self.plan.append(state.action)
 
+
+    def __eq__(self, other):
+        return self.agent_char == other.agent_char
+
+    def __lt__(self, other):
+        return self.agent_char < other.agent_char
+
+    def __hash__(self):
+        prime = 31
+        _hash = 1
+        _hash = _hash * prime + hash(self.agent_char)
+        self._hash = _hash
+        return self._hash

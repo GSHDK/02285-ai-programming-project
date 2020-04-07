@@ -7,7 +7,7 @@ from searchclient import SearchClient
 from agent import search_agent
 from strategy import StrategyBFS, StrategyDFS
 from goalassignment import *
-
+from conflictManager import ConflictManager
 from state import State
 
 
@@ -74,11 +74,11 @@ def main():
     Testing with two agents
     '''
 
-    # client.initial_state
     #
     # agent1 = search_agent(1, 'blue', StrategyBFS)
     #
     # agent0 = search_agent(0, 'red', StrategyBFS)
+    #
     #
     # # Location return a list
     # location = client.initial_state.agents_goal[0]
@@ -115,8 +115,64 @@ def main():
     '''
     Testing assigner 
     '''
-    x=GoalAssigner(client.initial_state)
-    x.create_tasks()
+    current_state = State(client.initial_state)
+
+    # Create list of agents
+    list_agents = []
+    for k, v in current_state.reverse_agent_dict().items():
+        list_agents.append(search_agent(k, v[0], StrategyBFS))
+
+    list_agents.sort()
+    x = GoalAssigner(current_state, list_agents)
+    x.assign_tasks()
+    conflict_manager = ConflictManager()
+    conflict_manager.world_state = current_state
+
+
+    # Whileloop
+    while True:
+        list_of_actions = conflict_manager.fix_collisions(list_agents)
+        print("Done", file=sys.stderr, flush=True)
+
+        # push to server -> list of actions
+
+        current_state.world_state_update(list_of_actions)
+
+        if current_state.world_is_goal_state():
+            print("Done", file=sys.stderr, flush=True)
+            break
+
+        # update of state in classes
+        conflict_manager.world_state = current_state
+        GoalAssigner.world_state = current_state
+        x.assign_tasks()
+
+
+
+
+
+
+
+
+
+    while len(agent1.plan) > 0 or len(agent0.plan)>0:
+        string_action = ""
+        if len(agent0.plan) > 0:
+            test = agent0.plan.popleft()
+            string_action = string_action+str(test)[1:len(str(test))-1]+";"
+        else:
+            string_action = string_action + "NoOp;"
+
+        if len(agent1.plan) > 0:
+            test = agent1.plan.popleft()
+            string_action = string_action+str(test)[1:len(str(test))-1]
+        else:
+            string_action = string_action + "NoOp"
+        # x.update_world
+        x.assign_tasks()
+
+        print(string_action, file=sys.stderr, flush=True)
+
 
 
 

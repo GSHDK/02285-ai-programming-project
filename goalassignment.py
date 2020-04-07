@@ -4,6 +4,7 @@ from agent import search_agent
 from collections import defaultdict
 from utils import cityblock_distance
 import sys
+from action import ActionType
 
 
 
@@ -84,8 +85,8 @@ class GoalAssigner(Assigner):
                                                         cityblock_distance(element, k)]
                 used_ids.add(agent_tasks[key][1])
 
-        print(box_tasks, file=sys.stderr, flush=True)
-        # print(agent_tasks, file=sys.stderr, flush=True)
+        # print(box_tasks, file=sys.stderr, flush=True)
+        print(agent_tasks, file=sys.stderr, flush=True)
         return box_tasks, agent_tasks
 
     def assign_tasks(self):
@@ -100,39 +101,47 @@ class GoalAssigner(Assigner):
                 list_of_potential_elements = [x for x in list_of_potential_elements if x != element.agent_char]
                 for k, v in self.box_tasks.items():
                     if (self.world_state.goal_positions[k] in list_of_potential_elements) and k not in used_ids:
-                        temp_dist = cityblock_distance(k,self.world_state.reverse_agent_dict[element.agent_char])
+                        temp_dist = cityblock_distance(k, self.world_state.reverse_agent_dict()[element.agent_char][1])
                         if min_dist > temp_dist:
                             best_element = k
                             min_dist = temp_dist
 
                 used_ids.add(best_element)
 
-                # Update tasks by removing element
-                self.box_tasks.pop(best_element)
+                if best_element is None:
+                    continue
                 assignments[best_element] = element
+        if len(assignments)>0:
+            self._delegate_tasks_box(assignments)
 
-        self._delegate_tasks_box(assignments)
 
         # The agents that dosen't have a task should move to a goal location
         potential = list(set(self.agents) - set(assignments.values()))
+        # The agents that dosen't have a task should move to a goal location
+        potential = list(set(potential) - set([x for x in self.agents if len(x.plan) > 0]))
         assignments_a = dict()
         for agent in potential:
             if agent.agent_char in self.agent_tasks:
-                assignments_a[self.agent_tasks[agent.agent_char]] = agent
+                assignments_a[self.agent_tasks[agent.agent_char][0]] = agent
 
                 # Update tasks by removing element
                 self.agent_tasks.pop(agent.agent_char)
+            else:
+                # No able usefull actions
+                agent.plan.append(ActionType.NoOp)
 
         self._delegate_tasks_agent(assignments_a)
 
 
 
 
-    def _delegate_tasks_agent(self, assignments):
+    def _delegate_tasks_box(self, assignments):
         for k, v in assignments.items():
             v.search_box(self.world_state, self.box_tasks[k][1], k)
+            # Update tasks by removing element
+            self.box_tasks.pop(k)
 
-    def _delegate_tasks_box(self, assignments):
+    def _delegate_tasks_agent(self, assignments):
         for k, v in assignments.items():
             v.search_position(self.world_state, k)
 

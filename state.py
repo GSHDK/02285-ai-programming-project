@@ -68,6 +68,8 @@ class State:
             self.agents = cp(copy.agents)
             self.boxes = cp(copy.boxes)
             self.search_init = False
+            self.boxes_goal = copy.boxes_goal
+            self.agents_goal = copy.agents_goal
             self.sub_goal_box = copy.sub_goal_box
             self.g = copy.g
             self.colors_reverse = copy.colors_reverse
@@ -185,7 +187,7 @@ class State:
     def reverse_agent_dict(self):
         temp = defaultdict(list)
         for key, value in self.agents.items():
-            temp[value[0][1]] = [value[0][0], [int(key[0]), int(key[2])]]
+            temp[value[0][1]] = [value[0][0], key]
         return temp
 
     def world_state_update(self, actions: list):

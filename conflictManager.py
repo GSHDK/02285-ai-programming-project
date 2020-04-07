@@ -3,6 +3,7 @@ from state import State
 from action import Action, ActionType, Dir
 from collections import deque
 from pulp import *
+import sys
 
 #Squarebrackets på alle kald til dicts
 
@@ -34,8 +35,9 @@ class ConflictManager:
 
         for agent in agents:
             action = agent.plan[0] # Et enkelt state
-            agent_row = agentDict[agent.agent_char][1][0]
-            agent_col = agentDict[agent.agent_char][1][1]
+            loccation = [int(x) for x in agentDict[agent.agent_char][1].split(",")]
+            agent_row = loccation[0]
+            agent_col = loccation[1]
 
             if action.action_type is ActionType.Move:
                 #Move agent
@@ -50,7 +52,7 @@ class ConflictManager:
                 '''
                 Antager her at en box ikke kan flyttes af flere agenter på samme tid
                 '''
-                box_agent_match[box_id] = agent.char
+                box_agent_match[box_id] = agent.agent_char
                 #Move agent
                 temp_state.agents[f'{agent_row+action.agent_dir.d_row},{agent_col+action.agent_dir.d_col}']\
                     .append(temp_state.agents[f'{agent_row},{agent_col}'][0])
@@ -70,7 +72,7 @@ class ConflictManager:
                 '''
                 Antager her at en box ikke kan flyttes af flere agenter på samme tid
                 '''
-                box_agent_match[box_id] = agent.char
+                box_agent_match[box_id] = agent.agent_char
 
 
                 #Move Box
@@ -185,7 +187,7 @@ class ConflictManager:
 
         for agt in conflict_agents:
             Lp_prob += agt >= 0
-        
+        print(Lp_prob, file=sys.stderr, flush=True)
         Lp_prob.solve()
 
         #save results to dictionary for quick indexing

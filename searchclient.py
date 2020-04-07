@@ -3,6 +3,7 @@ import re
 import sys
 import memory
 import config
+from collections import defaultdict
 
 from state import State
 
@@ -30,11 +31,18 @@ class SearchClient:
 
                 elif line == "#colors\n":
                     self.initial_state.colors = {}
+                    self.initial_state.colors = defaultdict(list)
                     line = server_messages.readline()
                     while "#" not in [c for c in line]:
                         current_color = line.split(':')[0]
                         for x in line.split(':')[1].replace(' ','').strip('\n').split(','):
                             self.initial_state.colors[x] = current_color
+                            if not self.initial_state.colors_reverse[current_color]:
+                                self.initial_state.colors_reverse[current_color] = [x]
+                            else:
+                                y = self.initial_state.colors_reverse[current_color]
+                                y.append(x)
+                                self.initial_state.colors_reverse[current_color] = y
                         line = server_messages.readline()
                     break
                 line = server_messages.readline()
