@@ -56,8 +56,8 @@ def main():
     counter = 0
     while True:
         print(f"WHILE ENTER {counter}\n", file=sys.stderr, flush=True)
-        # print(f"{current_state.boxes} boxes", file=sys.stderr, flush=True)
-        # print(f"{current_state.agents} agents", file=sys.stderr, flush=True)
+        print(f"{current_state.boxes} boxes", file=sys.stderr, flush=True)
+        print(f"{current_state.agents} agents", file=sys.stderr, flush=True)
 
         for e in list_agents:
             print(f'{e.plan[0]} {e.agent_char} before', file=sys.stderr, flush=True)
@@ -65,6 +65,11 @@ def main():
 
         
         list_of_actions, agent_illegal_moves  = conflict_manager.fix_collisions(list_agents)
+        print(f"{list_of_actions} list", file=sys.stderr, flush=True)
+
+        # Keeps it from getting out of hand while testing
+        if counter == 10:
+            break
 
         # push to server -> list of actions
         my_string = ';'.join(list(str(x) for x in list_of_actions))

@@ -18,7 +18,6 @@ Dir.S = Dir('S',  1,  0)
 Dir.E = Dir('E',  0,  1)
 Dir.W = Dir('W',  0, -1)
 
-
 class ActionType:
     Move = Push = Pull = NoOp = None
     

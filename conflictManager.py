@@ -38,8 +38,13 @@ class ConflictManager:
             agent_row = location[0]
             agent_col = location[1]
 
-            new_agent_position = [agent_row+action.agent_dir.d_row,
+            # Fix for NoOp action
+            if action.action_type is ActionType.NoOp:
+                new_agent_position = [agent_row, agent_col]
+            else:
+                new_agent_position = [agent_row+action.agent_dir.d_row,
                                   agent_col+action.agent_dir.d_col]
+
             new_agent_location_string = f'{new_agent_position[0]},{new_agent_position[1]}'
 
             assigned_boxes = [agent.world_state.sub_goal_box for agent in agents]
@@ -216,7 +221,8 @@ class ConflictManager:
         agent_collisions = self.check_collisions(agents,agentDict)
        
         if len(agent_collisions) == 0:
-            return [agent.plan.popleft() for agent in agents]
+            joint_actions = [agent.plan.popleft() for agent in agents]
+            return joint_actions, agent_illegal_moves
 
         '''I første omgang regner vi med ingen illegale moves,så denne vektor pille vi ikke ved. Det bliver altså så et spørgsmål 
         om at give NoOps tilfældigt til agenterne så deres collisions løses, og så returnere deres joint actions
@@ -272,7 +278,7 @@ class ConflictManager:
                     agent.plan.appendleft(Action(ActionType.NoOp, None, None))
         
         joint_actions = [agent.plan.popleft() for agent in agents]
-        return [joint_actions, agent_illegal_moves]
+        return joint_actions, agent_illegal_moves
                     
                     
 
