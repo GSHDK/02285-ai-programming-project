@@ -38,16 +38,20 @@ class ConflictManager:
             agent_row = location[0]
             agent_col = location[1]
 
-            # Fix for NoOp action
+            #Fix for NoOp
             if action.action_type is ActionType.NoOp:
-                new_agent_position = [agent_row, agent_col]
+                new_agent_position = [agent_row,agent_col]
             else:
                 new_agent_position = [agent_row+action.agent_dir.d_row,
                                   agent_col+action.agent_dir.d_col]
 
             new_agent_location_string = f'{new_agent_position[0]},{new_agent_position[1]}'
 
+            ############################################################
+            #KUN illegalt move hvis boksen ikke er inkluderet i en plan#
             assigned_boxes = [agent.world_state.sub_goal_box for agent in agents]
+            ############################################################
+
 
             if action.action_type is ActionType.Move:
                 if not self.world_state.is_free(new_agent_location_string):
