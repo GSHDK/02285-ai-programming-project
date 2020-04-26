@@ -48,6 +48,7 @@ def main():
     list_agents.sort()
     x = GoalAssigner(current_state, list_agents)
     x.assign_tasks()
+    # TODO: Conflictmanager requires a list of agents - include this and test blackboard
     conflict_manager = ConflictManager()
     conflict_manager.world_state = current_state
 

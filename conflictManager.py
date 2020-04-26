@@ -15,7 +15,7 @@ from replanner import Replanner
 class ConflictManager:
 
 
-    def __init__(self,agents:list):
+    def __init__(self, agents:list):
 
         '''
         Percept the world with current state
@@ -25,7 +25,7 @@ class ConflictManager:
 
         self._create_blackboard()
 
-   def _create_blackboard(self):
+    def _create_blackboard(self):
 
         len_agt = len(self.world_state.agents)
         len_box = len(self.world_state.boxes)
