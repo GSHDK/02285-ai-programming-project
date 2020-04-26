@@ -226,6 +226,11 @@ class search_agent(Agent):
         for state in list_states:
             self.plan.append(state.action)
 
+    def update_old_subgoal(self):
+        if len(self.plan) < 1:
+            if hasattr(self, 'world_state'):
+                self.world_state.sub_goal_box = None
+
 
     def __eq__(self, other):
         return self.agent_char == other.agent_char

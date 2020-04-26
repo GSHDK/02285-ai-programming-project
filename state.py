@@ -35,7 +35,7 @@ class State:
             self.walls = defaultdict(bool)
             
 
-            # this defaultdict takes as input a string of coordinates and returns a list of size 2 with color,char of the agents
+            # this defaultdict takes as input a string of coordinates and returns a list of size 3 with color,char of the agents, and internal id
             self.agents = defaultdict(list)
 
             # this default_dict takes as input an agent char an returns a list of string of coordinates with len one
@@ -128,6 +128,7 @@ class State:
         if self.search_init:
             return (new_position not in self.agents) and (new_position not in self.boxes) and (new_position not in self.walls)
         else:
+            # TODO: Solve the problem of moving into agent locations where the agent is "done"
             return (new_position not in self.walls) and (new_position not in self.boxes)
 
     def _update_agent_location(self,old_location: str, new_location: str):
@@ -306,15 +307,8 @@ class State:
     # TO DO: Fix this to work on new repr
     def __repr__(self):
         lines = []
-        for row in range(State.MAX_ROW):
-            line = []
-            for col in range(State.MAX_COL):
-                if self.boxes[row][col] is not None: line.append(self.boxes[row][col])
-                elif self.goals[row][col] is not None: line.append(self.goals[row][col])
-                elif self.walls[row][col] is not None: line.append('+')
-                elif self.agent_row == row and self.agent_col == col: line.append('0')
-                else: line.append(' ')
-            lines.append(''.join(line))
+        lines.append(f"{self.boxes} boxes")
+        lines.append(f"{self.agents} agents")
         return '\n'.join(lines)
     
     def __lt__(self, other):

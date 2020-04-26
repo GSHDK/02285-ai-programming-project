@@ -29,7 +29,7 @@ class ConflictManager:
 
     '''
 
-    def prereq_check(self,agents: list, agentDict):
+    def prereq_check(self, agents: list, agentDict):
         #temp_state_create skal være kørt forinden dette, så vi kan bruge 
         #World_state SKAL være opdateret i dette trin
 
@@ -37,6 +37,9 @@ class ConflictManager:
         
         for agent in agents:
             action = agent.plan[0]
+            # print("_____", file=sys.stderr, flush=True)
+            # print(agentDict, flush=True, file=sys.stderr)
+            # print(agent.agent_char, flush=True, file=sys.stderr)
             location = [int(x) for x in agentDict[agent.agent_char][1].split(",")]
             agent_row = location[0]
             agent_col = location[1]
@@ -113,8 +116,9 @@ class ConflictManager:
                             # agent.plan.appendleft(Action(ActionType.NoOp, None, None))
             elif action.action_type is ActionType.Push:
                 box_loc_string = f'{agent_row+action.agent_dir.d_row+action.box_dir.d_row},{agent_col+action.agent_dir.d_col+action.box_dir.d_col}'
-
                 if not self.world_state.is_free(box_loc_string):
+                    # TODO: Solve the problem of moving into agent locations where the agent is "done"
+
                     if box_loc_string in self.world_state.agents:
                         agent.plan.appendleft(Action(ActionType.NoOp, None, None))
                     else:
@@ -261,7 +265,8 @@ class ConflictManager:
     def fix_collisions(self, agents):
 
         agentDict = self.world_state.reverse_agent_dict()
-        
+        print(agentDict, file=sys.stderr, flush=True)
+
         agent_illegal_moves = self.prereq_check(agents,agentDict)
 
         agent_collisions = self.check_collisions(agents,agentDict)

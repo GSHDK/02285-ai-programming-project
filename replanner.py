@@ -39,6 +39,7 @@ class Replanner(metaclass=ABCMeta):
                 if value[0][2] == agent.current_box_id:
                     break
 
+            # Use that value to update temp_state and remove other boxes
             temp_state = State(self.world_state)
             for element in _pop:
                 if element == key:
@@ -46,12 +47,24 @@ class Replanner(metaclass=ABCMeta):
                 else:
                     temp_state.boxes.pop(element)
 
+            # Remove other agents and let collision avoidance responsebility be at conflictmanager level.
+            __to_be_removed=[]
+            for _k, _v in temp_state.agents.items():
+                if _v[0][1] != agent.agent_char:
+                    __to_be_removed.append(_k)
+
+            while len(__to_be_removed) > 0:
+                temp_state.agents.pop(__to_be_removed.pop())
+
             location = [int(x) for x in agent_dict[agent.agent_char][1].split(",")]
             agent_row = location[0]
             agent_col = location[1]
             box_not_moved = True
             action_counter = 0
             _replanned = False
+
+            # Update world state for agent - check if it can be removed
+            agent.world_state = State(temp_state)
 
             for action in agent.plan:
                 action_counter += 1
@@ -165,9 +178,10 @@ class Replanner(metaclass=ABCMeta):
                         box_row = agent_row + action.agent_dir.d_row + action.box_dir.d_row
                         box_col = agent_col + action.box_dir.d_col + action.box_dir.d_col
 
-            # TODO: Implement if free location not found (goal location blocked)
+            # TODO: Implement if free location not found (goal location blocked, too far away)
             if not _replanned:
-                raise Exception('Goal location blocked')
+                print(temp_state, file=sys.stderr, flush=True)
+                raise Exception('Goal location blocked or unreachable')
             # print(agent.plan, file=sys.stderr, flush=True)
         # self.color_goals = self.create_color_goals()
 
