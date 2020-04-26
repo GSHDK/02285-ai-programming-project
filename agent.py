@@ -32,6 +32,7 @@ class search_agent(Agent):
 
         # Conflict only interacts with this one
         self.plan = deque()
+        self.current_box_id = None
 
         self.heuristic = heuristic
         self.strategy = strategy()
@@ -61,6 +62,8 @@ class search_agent(Agent):
         for key, value in self.world_state.boxes.items():
             if key == box_from:
                 box_id = value[0][2]
+
+        self.current_box_id = box_id
 
         removed_dict = {k: v for k, v in self.world_state.boxes.items() if k == box_from}
         self.world_state.boxes = defaultdict(list, removed_dict)
@@ -119,7 +122,6 @@ class search_agent(Agent):
 
         self.world_state.agents = defaultdict(list, removed_dict)
 
-
         # Removing all e
         while len(self.world_state.boxes) > 0:
             self.world_state.boxes.popitem()
@@ -136,6 +138,7 @@ class search_agent(Agent):
                 return None
 
             if strategy.frontier_empty():
+                print('Empty frontier', file=sys.stderr, flush=True)
                 return None
 
             leaf = strategy.get_and_remove_leaf()
@@ -155,7 +158,8 @@ class search_agent(Agent):
     def search_replanner_heuristic(self, world_state: 'State', agent_to, box_from=None, box_to=None):
         self.world_state = State(world_state)
 
-        print('Starting search with strategy {}.'.format(self.strategy), file=sys.stderr, flush=True)
+        # TODO: Currently: quick fix to solve agent allowed moves problem - rewrite to allow for agents to move unassigned boxes
+        self.world_state.sub_goal_box = self.world_state.boxes[box_from][0][2]
 
         # finding our initial location and removing all other elements to increase speed and simplify world
         for key, value in self.world_state.agents.items():
@@ -165,12 +169,16 @@ class search_agent(Agent):
         removed_dict = {k: v for k, v in self.world_state.agents.items() if v[0][1] == self.agent_char}
         self.world_state.agents = defaultdict(list, removed_dict)
 
-        strategy = StrategyBestFirst(heuristic.AStar(self.world_state, heuristic_func.h_replanner_pos,
-                                                     agent_to=agent_to,
-                                                     agent_char=self.agent_char,
-                                                     box_char=self.world_state.boxes[box_from][0][2],
-                                                     box_to=box_to))
-
+        if box_from is None:
+            strategy = StrategyBestFirst(heuristic.AStar(self.world_state, heuristic_func.h_replanner_pos,
+                                                         agent_to=agent_to,
+                                                         agent_char=self.agent_char))
+        else:
+            strategy = StrategyBestFirst(heuristic.AStar(self.world_state, heuristic_func.h_replanner_pos,
+                                                         agent_to=agent_to,
+                                                         agent_char=self.agent_char,
+                                                         box_id=self.world_state.boxes[box_from][0][2],
+                                                         box_to=box_to))
         # In case there has been a previous search we need to clear the elements in the strategy object
         strategy.reset_strategy()
 
@@ -178,6 +186,7 @@ class search_agent(Agent):
 
         iterations = 0
         while True:
+
             if iterations == 1000:
                 print(strategy.search_status(), file=sys.stderr, flush=True)
                 iterations = 0
@@ -191,12 +200,15 @@ class search_agent(Agent):
                 return None
 
             leaf = strategy.get_and_remove_leaf()
+            # print(strategy.heuristic.h(leaf), file=sys.stderr, flush=True)
+            # print(f"{leaf.boxes} boxes", file=sys.stderr, flush=True)
+            # print(f"{leaf.agents} agents", file=sys.stderr, flush=True)
 
             # h=0 is the same as goal
+            # TODO: Update this to work with something else
             if strategy.heuristic.h(leaf) == 0:
-                raise Exception('Found a solution needs implementation')
-                return leaf.extract_plan()
-                break
+                _temp_plan = leaf.extract_plan()
+                return [x.action for x in _temp_plan]
 
             strategy.add_to_explored(leaf)
             x = strategy.explored.pop()
@@ -213,6 +225,11 @@ class search_agent(Agent):
     def _convert_plan_to_action_list(self, list_states: [State, ...]):
         for state in list_states:
             self.plan.append(state.action)
+
+    def update_old_subgoal(self):
+        if len(self.plan) < 1:
+            if hasattr(self, 'world_state'):
+                self.world_state.sub_goal_box = None
 
 
     def __eq__(self, other):

@@ -34,134 +34,9 @@ class ConflictManager:
 
     '''
 
-
-    def _create_blackboard(self):
-
-        len_agt = len(self.world_state.agents)
-        len_box = len(self.world_state.boxes)
-
-        time_zero = [0]*(len_agt+len_box)
-
-
-        for loc,agt in self.world_state.agents.items():
-            row, col = loc.split(',')
-            time_zero[agt[0][2]] = (int(row),int(col))
-        for loc,box in self.world_state.boxes.items():
-            row, col = loc.split(',')
-            time_zero[box[0][2] + len_agt] = (int(row),int(col))
-        
-        #TODO: location variablen skal konstisten være str eller tuple 
-        
-        #Insert into the blacboard
-        self.blackboard[0] = time_zero
-
-            
-
-    def update_blackboard(self,agents:list,time:int):
-
-        ##########TODO:
-        ### HUSK AT DENNE TAGER UDGANGSPUNKT I AT KUN EN/1 BOKS 
-        ### KAN VÆRE INKLUDERET I EN PLAN SAMTIDIG
-        ##########
-
-
-
-        '''
-        This method shall be called inside the agent-controll loop, so first time = 1
-        time = Global time step
-        
-        '''
-        len_agents = len(agents)
-
-        min_plan_length = math.inf
-
-        moved_boxes = [False]*len(self.world_state.boxes)
-
-        for agt_id,agent in enumerate(agents):
-            T = time
-
-            if len(agent.plan) < min_plan_length:
-                min_plan_length = len(agent.plan)
-
-            if T not in self.blackboard:
-                self.blackboard[T] = [0] * (len(self.world_state.agents)+len(self.world_state.boxes))
-
-            box_id = None 
-
-            counter = 0
-            while True:
-                #Run through all elements of the plan
-                try:
-                    action = agent.plan[counter]
-                except:
-                    break
-
-                if action.action_type is ActionType.NoOp:
-                    self.blackboard[T][agt_id] = self.blackboard[T-1][agt_id] 
-                    
-                elif action.action_type is ActionType.Move:
-                    agt_row, agt_col = self.blackboard[T-1][agt_id]
-                    
-                    new_agt_row = agt_row + action.agent_dir.d_row
-                    new_agt_col = agt_col + action.agent_dir.d_col
-
-                    self.blackboard[T][agt_id] = (new_agt_row,new_agt_col)
-                    
-                elif action.action_type is ActionType.Push:
-                    agt_row, agt_col = self.blackboard[T-1][agt_id]
-                    new_agt_row = agt_row + action.agent_dir.d_row
-                    new_agt_col = agt_col + action.agent_dir.d_col
-
-                    box_row = new_agt_row 
-                    box_col = new_agt_col 
-                    
-                    new_box_row = box_row + action.box_dir.d_row
-                    new_box_col = box_col + action.box_dir.d_col
-
-                    if box_id == None:
-                        box_id =  self.world_state.boxes[f'{box_row},{box_col}'][0][2]
-
-
-                    self.blackboard[T][agt_id] = (new_agt_row,new_agt_col)
-                    self.blackboard[T][box_id+len_agents] = (new_box_row,new_box_col)
-
-                    moved_boxes[box_id] = True
-
-                elif action.action_type is ActionType.Pull:
-                    agt_row, agt_col = self.blackboard[T-1][agt_id]
-                    new_agt_row = agt_row + action.agent_dir.d_row
-                    new_agt_col = agt_col + action.agent_dir.d_col
-
-                    box_row = agt_row +  action.box_dir.d_row
-                    box_col = agt_col +  action.box_dir.d_col
-                    
-                    new_box_row = agt_row 
-                    new_box_col = agt_col
-
-                    if box_id == None:
-                        box_id = self.world_state.boxes[f'{box_row},{box_col}'][0][2]
-                    
-                    self.blackboard[T][agt_id] = (new_agt_row,new_agt_col)
-                    self.blackboard[T][box_id+len_agents] = (new_box_row,new_box_col)
-
-                    moved_boxes[box_id] = True
-                
-                counter+=1
-                T+=1
-        ##
-        T = time
-        for b_id,moved in enumerate(moved_boxes):
-            if not moved:
-                for i in range(T,T+min_plan_length):
-                    print(i)
-                    self.blackboard[i][b_id+len_agents] = self.blackboard[i-1][b_id+len_agents]
-
     
-    def delete_from_blackboard(self,time):
-        #Must always be run after sending actions to the server 
-        self.blackboard.pop(time)
 
-    def prereq_check(self,agents: list, agentDict):
+    def prereq_check(self, agents: list, agentDict):
         #temp_state_create skal være kørt forinden dette, så vi kan bruge 
         #World_state SKAL være opdateret i dette trin
 
@@ -169,6 +44,9 @@ class ConflictManager:
         
         for agent in agents:
             action = agent.plan[0]
+            # print("_____", file=sys.stderr, flush=True)
+            # print(agentDict, flush=True, file=sys.stderr)
+            # print(agent.agent_char, flush=True, file=sys.stderr)
             location = [int(x) for x in agentDict[agent.agent_char][1].split(",")]
             agent_row = location[0]
             agent_col = location[1]
@@ -187,7 +65,7 @@ class ConflictManager:
             #TODO: Passer dette stadig
             assigned_boxes = [agent.world_state.sub_goal_box for agent in agents]
             __assigned_boxes_agent = [[agent.world_state.sub_goal_box, agent.agent_char] for agent in agents]
-            __box_visible_replanning = [x for x in self.world_state.boxes.values() if x[2] not in assigned_boxes]
+            __box_visible_replanning = [x[0][2] for x in self.world_state.boxes.values() if x[0][2] not in assigned_boxes]
             ############################################################
 
 
@@ -208,13 +86,13 @@ class ConflictManager:
                             if utils.cityblock_distance(new_agent_location_string, agentDict[__assigned_agent][1]) > config.illegal_move_threshold:
                                 # INITIALIZE REPLAN (FIND ALTERNATIVE ROUTE AROUND OBJECT)
                                 __box_visible_replanning.append(box_id)
-                                illegal_movers.append(agent.agent_char)
+                                illegal_movers.append(agent)
                                 None
                             else:
                                 agent.plan.appendleft(Action(ActionType.NoOp, None, None))
                         else:
                             #Hvis box er stationær skal der replannes. Input et NoOp, så action ikke fejler bagefter
-                            illegal_movers.append(agent.agent_char)
+                            illegal_movers.append(agent)
                             # agent.plan.appendleft(Action(ActionType.NoOp, None, None))
 
             elif action.action_type is ActionType.Pull:
@@ -235,18 +113,19 @@ class ConflictManager:
                                                         agentDict[__assigned_agent][1]) > config.illegal_move_threshold:
                                 # INITIALIZE REPLAN (FIND ALTERNATIVE ROUTE AROUND OBJECT)
                                 __box_visible_replanning.append(box_id)
-                                illegal_movers.append(agent.agent_char)
+                                illegal_movers.append(agent)
                                 None
                             else:
                                 agent.plan.appendleft(Action(ActionType.NoOp, None, None))
                         else:
                             #Hvis box er stationær skal der replannes. Input et NoOp, så action ikke fejler bagefter
-                            illegal_movers.append(agent.agent_char)
+                            illegal_movers.append(agent)
                             # agent.plan.appendleft(Action(ActionType.NoOp, None, None))
             elif action.action_type is ActionType.Push:
                 box_loc_string = f'{agent_row+action.agent_dir.d_row+action.box_dir.d_row},{agent_col+action.agent_dir.d_col+action.box_dir.d_col}'
-
                 if not self.world_state.is_free(box_loc_string):
+                    # TODO: Solve the problem of moving into agent locations where the agent is "done"
+
                     if box_loc_string in self.world_state.agents:
                         agent.plan.appendleft(Action(ActionType.NoOp, None, None))
                     else:
@@ -261,18 +140,18 @@ class ConflictManager:
                                                         agentDict[__assigned_agent][1]) > config.illegal_move_threshold:
                                 # INITIALIZE REPLAN (FIND ALTERNATIVE ROUTE AROUND OBJECT)
                                 __box_visible_replanning.append(box_id)
-                                illegal_movers.append(agent.agent_char)
+                                illegal_movers.append(agent)
                                 None
                             else:
                                 agent.plan.appendleft(Action(ActionType.NoOp, None, None))
                         else:
                             #Hvis box er stationær skal der replannes. Input et NoOp, så action ikke fejler bagefter
-                           illegal_movers.append(agent.agent_char)
+                           illegal_movers.append(agent)
                            # agent.plan.appendleft(Action(ActionType.NoOp, None, None))
 
         # Create replanning object and handle illegal moves
-        Replanner(self.world_state, agents)
-        Replanner.replan_v1(illegal_movers, __box_visible_replanning)
+        replanner = Replanner(self.world_state, agents)
+        Replanner.replan_v1(replanner, illegal_movers=illegal_movers, boxes_visible=__box_visible_replanning)
         return illegal_movers
 
 
@@ -393,7 +272,8 @@ class ConflictManager:
     def fix_collisions(self, agents):
 
         agentDict = self.world_state.reverse_agent_dict()
-        
+        print(agentDict, file=sys.stderr, flush=True)
+
         agent_illegal_moves = self.prereq_check(agents,agentDict)
 
         agent_collisions = self.check_collisions(agents,agentDict)

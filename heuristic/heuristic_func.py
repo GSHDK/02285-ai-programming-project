@@ -11,14 +11,14 @@ def h_replanner_pos(self: 'Heuristic', state: 'State', dist_function) -> 'int':
         raise Exception('Using wrong heuristic. **kwargs must contain agent_data')
 
     for key, value in state.agents.items():
-        if value[0][1] == self.agent_char:
+        if value[0][1] == self.data['agent_char']:
             agent_location = key
 
-    for key, value in state.boxes.items():
-        if value == value[0][2]:
-            box_location = key
-
     if 'box_to' in self.data:
+        for key, value in state.boxes.items():
+            if self.data['box_id'] == value[0][2]:
+                box_location = key
+
         return max(dist_function(agent_location, self.data['agent_to']),
                    dist_function(box_location, self.data['box_to']))
     else:

@@ -65,6 +65,11 @@ def main():
 
         
         list_of_actions, agent_illegal_moves  = conflict_manager.fix_collisions(list_agents)
+
+        # Update agents without assigned goal
+        for agent in list_agents:
+            agent.update_old_subgoal()
+
         print(f"{list_of_actions} list", file=sys.stderr, flush=True)
 
         # Keeps it from getting out of hand while testing
