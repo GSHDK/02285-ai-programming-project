@@ -126,9 +126,9 @@ class State:
 
     def is_free(self, new_position: str) -> 'bool':
         if self.search_init:
-            return (new_position not in self.agents) & (new_position not in self.boxes & new_position not in self.walls)
+            return (new_position not in self.agents) and (new_position not in self.boxes) and (new_position not in self.walls)
         else:
-            return (new_position not in self.walls) & (new_position not in self.boxes)
+            return (new_position not in self.walls) and (new_position not in self.boxes)
 
     def _update_agent_location(self,old_location: str, new_location: str):
         x = self.agents[old_location]
@@ -148,8 +148,6 @@ class State:
         for key, value in self.agents.items():
             if value[0][1] == agentId:
                 agent_location = key
-
-
         children = []
         old_agent_location = [int(x) for x in re.findall(r'\d+', agent_location)]
         old_agent_location_string = f'{old_agent_location[0]},{old_agent_location[1]}'
@@ -173,8 +171,8 @@ class State:
             elif action.action_type is ActionType.Push:
                 if self.box_at(new_agent_location_string):
                     if self.boxes[new_agent_location_string][0][2] == self.sub_goal_box:
-                        new_box_location = f'{new_agent_position[0]+action.box_dir.d_row},{new_agent_position[1] + action.box_dir.d_col}'
 
+                        new_box_location = f'{new_agent_position[0]+action.box_dir.d_row},{new_agent_position[1] + action.box_dir.d_col}'
                         if self.is_free(new_box_location):
                             child = State(copy=self)
                             child._update_agent_location(old_agent_location_string,new_agent_location_string)

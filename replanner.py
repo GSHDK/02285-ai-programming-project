@@ -24,13 +24,15 @@ class Replanner(metaclass=ABCMeta):
 
     def replan_v1(self, illegal_movers, boxes_visible):
 
-        _pop = [y for y, x in self.world_state.boxes.items() if x[2] not in boxes_visible]
+        _pop = [y for y, x in self.world_state.boxes.items() if x[0][2] not in boxes_visible]
         agent_dict = self.world_state.reverse_agent_dict()
 
         # Remove boxes not in boxes_visible
         _agent_assinged_box = dict()
 
         for agent in illegal_movers:
+            # print("_____________ENTER___________", file=sys.stderr, flush=True)
+            # print(agent.plan, file=sys.stderr, flush=True)
 
             # This insures that we have the box that the agent is currently assigned to
             for key, value in self.world_state.boxes.items():
@@ -146,7 +148,6 @@ class Replanner(metaclass=ABCMeta):
                                                                        agent_to=f'{agent_row + action.agent_dir.d_row},{agent_col + action.agent_dir.d_col}',
                                                                        box_from=k_temp,
                                                                        box_to=f'{agent_row + action.agent_dir.d_row + action.box_dir.d_row},{agent_col + action.agent_dir.d_col + action.box_dir.d_col}')
-
                         merge_agent_plans(agent, temp_replan, action_counter)
                         _replanned=True
                         break
@@ -167,20 +168,18 @@ class Replanner(metaclass=ABCMeta):
             # TODO: Implement if free location not found (goal location blocked)
             if not _replanned:
                 raise Exception('Goal location blocked')
-
-
-
-
-
-
-
+            # print(agent.plan, file=sys.stderr, flush=True)
         # self.color_goals = self.create_color_goals()
 
 def merge_agent_plans(agent, temp_replan, action_counter):
+    print("________", file=sys.stderr, flush=True)
+    print(agent.plan, file=sys.stderr, flush=True)
     while action_counter > 0:
         agent.plan.popleft()
         action_counter -= 1
     # Append new plan
     while len(temp_replan) > 0:
-        agent.appendleft(temp_replan.pop())
-    raise Exception('Test if the agent plan is correct')
+        agent.plan.appendleft(temp_replan.pop())
+    print(agent.plan, file=sys.stderr, flush=True)
+
+

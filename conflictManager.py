@@ -55,7 +55,7 @@ class ConflictManager:
             #TODO: Passer dette stadig
             assigned_boxes = [agent.world_state.sub_goal_box for agent in agents]
             __assigned_boxes_agent = [[agent.world_state.sub_goal_box, agent.agent_char] for agent in agents]
-            __box_visible_replanning = [x for x in self.world_state.boxes.values() if x[2] not in assigned_boxes]
+            __box_visible_replanning = [x[0][2] for x in self.world_state.boxes.values() if x[0][2] not in assigned_boxes]
             ############################################################
 
 
@@ -139,8 +139,8 @@ class ConflictManager:
                            # agent.plan.appendleft(Action(ActionType.NoOp, None, None))
 
         # Create replanning object and handle illegal moves
-        Replanner(self.world_state, agents)
-        Replanner.replan_v1(illegal_movers=illegal_movers, boxes_visible=__box_visible_replanning)
+        replanner = Replanner(self.world_state, agents)
+        Replanner.replan_v1(replanner, illegal_movers=illegal_movers, boxes_visible=__box_visible_replanning)
         return illegal_movers
 
 
