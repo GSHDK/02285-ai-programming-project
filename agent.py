@@ -32,6 +32,7 @@ class search_agent(Agent):
 
         # Conflict only interacts with this one
         self.plan = deque()
+        self.current_box_id = None
 
         self.heuristic = heuristic
         self.strategy = strategy()
@@ -61,6 +62,8 @@ class search_agent(Agent):
         for key, value in self.world_state.boxes.items():
             if key == box_from:
                 box_id = value[0][2]
+
+        self.current_box_id = box_id
 
         removed_dict = {k: v for k, v in self.world_state.boxes.items() if k == box_from}
         self.world_state.boxes = defaultdict(list, removed_dict)
@@ -165,11 +168,16 @@ class search_agent(Agent):
         removed_dict = {k: v for k, v in self.world_state.agents.items() if v[0][1] == self.agent_char}
         self.world_state.agents = defaultdict(list, removed_dict)
 
-        strategy = StrategyBestFirst(heuristic.AStar(self.world_state, heuristic_func.h_replanner_pos,
-                                                     agent_to=agent_to,
-                                                     agent_char=self.agent_char,
-                                                     box_char=self.world_state.boxes[box_from][0][2],
-                                                     box_to=box_to))
+        if box_from is None:
+            strategy = StrategyBestFirst(heuristic.AStar(self.world_state, heuristic_func.h_replanner_pos,
+                                                         agent_to=agent_to,
+                                                         agent_char=self.agent_char))
+        else:
+            strategy = StrategyBestFirst(heuristic.AStar(self.world_state, heuristic_func.h_replanner_pos,
+                                                         agent_to=agent_to,
+                                                         agent_char=self.agent_char,
+                                                         box_id=self.world_state.boxes[box_from][0][2],
+                                                         box_to=box_to))
 
         # In case there has been a previous search we need to clear the elements in the strategy object
         strategy.reset_strategy()
@@ -193,10 +201,9 @@ class search_agent(Agent):
             leaf = strategy.get_and_remove_leaf()
 
             # h=0 is the same as goal
+            # TODO: Update this to work with something else
             if strategy.heuristic.h(leaf) == 0:
-                raise Exception('Found a solution needs implementation')
                 return leaf.extract_plan()
-                break
 
             strategy.add_to_explored(leaf)
             x = strategy.explored.pop()
