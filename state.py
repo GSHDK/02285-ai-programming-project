@@ -204,6 +204,11 @@ class State:
             temp[value[0][1]] = [value[0][0], key]
         return temp
 
+    def reverse_boxes_dict(self):
+        temp = defaultdict(list)
+        for key, value in self.boxes.items():
+            temp[value[0][2]] = [key, value[0][0], value[0][1]]
+        return temp
     
     def reverse_agent_dict_internal(self):
         #TODO: HUSK DETNNE ÆNDRING OG SE OM DEN GIVER PROBLEMS senere hen

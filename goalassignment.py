@@ -5,6 +5,7 @@ from collections import defaultdict
 from utils import cityblock_distance
 import sys
 from action import ActionType, Action
+import config
 
 
 
@@ -63,7 +64,7 @@ class GoalAssigner(Assigner):
                     if (value_box[0][1] == key) and (key_box not in used_ids):
                         if not len(box_tasks[element]):
                             box_tasks[element] = [key, key_box,
-                                                   cityblock_distance(element, key_box)]
+                                                   cityblock_distance(element, key_box), value_box[0][2]]
                         else:
                             if box_tasks[element][2] > cityblock_distance(element, key_box):
                                 box_tasks[element] = [key, key_box,
@@ -97,7 +98,8 @@ class GoalAssigner(Assigner):
                 best_element = None
 
                 list_of_potential_elements = self.world_state.colors_reverse[element.agent_color]
-                list_of_potential_elements = [x for x in list_of_potential_elements if x != element.agent_char]
+                list_of_potential_elements = [x for x in list_of_potential_elements if x not in config.agent_list_str]
+                print(list_of_potential_elements, flush=True, file=sys.stderr)
                 for k, v in self.box_tasks.items():
                     if (self.world_state.goal_positions[k] in list_of_potential_elements) and k not in used_ids:
                         temp_dist = cityblock_distance(k, self.world_state.reverse_agent_dict()[element.agent_char][1])
@@ -131,6 +133,57 @@ class GoalAssigner(Assigner):
 
         self._delegate_tasks_agent(assignments_a)
 
+    def reassign_tasks(self):
+        used_ids = set()
+        assignments = dict()
+        for element in self.agents:
+            if len(element.plan) == 0:
+                # We first get the goallocations still needing boxex
+
+                # Potential boxes
+                # TODO: I think this also has agents in it
+                list_of_potential_elements = self.world_state.colors_reverse[element.agent_color]
+                list_of_potential_elements = [x for x in list_of_potential_elements if x not in config.agent_list_str]
+
+                min_dist = 10 ** 5
+                best_element = None
+
+                for k, v in self.box_tasks.items():
+                    if (self.world_state.goal_positions[k] in list_of_potential_elements) and k not in used_ids:
+                        # Gives current distance from agent to box
+                        temp_dist = cityblock_distance(self.world_state.reverse_boxes_dict()[v[3]][0],
+                                                       self.world_state.reverse_agent_dict()[element.agent_char][1])
+                        if min_dist > temp_dist:
+                            best_element = (k, self.world_state.reverse_boxes_dict()[v[3]][0])
+                            min_dist = temp_dist
+
+                used_ids.add(best_element)
+                if best_element is None:
+                    continue
+                assignments[best_element] = element
+        if len(assignments) > 0:
+            temp_dict = {}
+            for k,v in assignments.items():
+                temp_dict[k[1]] = v
+            self._delegate_tasks_box(temp_dict)
+
+        # The agents that dosen't have a task should move to a goal location
+        potential = list(set(self.agents) - set(assignments.values()))
+
+        # The agents that dosen't have a task should move to a goal location
+        potential = list(set(potential) - set([x for x in self.agents if len(x.plan) > 0]))
+        assignments_a = dict()
+        for agent in potential:
+            if agent.agent_char in self.agent_tasks:
+                assignments_a[self.agent_tasks[agent.agent_char][0]] = agent
+
+                # Update tasks by removing element
+                self.agent_tasks.pop(agent.agent_char)
+            else:
+                # No able usefull actions
+                agent.plan.append(Action(ActionType.NoOp, None, None))
+
+        self._delegate_tasks_agent(assignments_a)
 
 
 
