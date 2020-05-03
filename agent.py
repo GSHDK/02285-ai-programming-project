@@ -33,6 +33,7 @@ class search_agent(Agent):
         # Conflict only interacts with this one
         self.plan = deque()
         self.current_box_id = None
+        self.plan_category = int
 
         self.heuristic = heuristic
         self.strategy = strategy()

@@ -20,14 +20,159 @@ class ConflictManager:
         Percept the world with current state
         '''
         self.world_state = None
-        self.blackboard = {}
+        
+        #self.blackboard = 
         self.stationary_agents = []
         self.stationary_boxes = []
         self.shortest_plan_agt = None #Agent with shortest plan
 
 
-        self._create_blackboard()
+        #self._create_blackboard()
        
+
+
+    def blackboard_step(self,agents:list)
+
+        len_agents = len(agents)
+        stationary_boxes = [True]*len(self.world_state.boxes)
+
+        blackboard = [[],[]]
+
+        #Set current corrdinates
+        for loc,agt in self.world_state.agents.items():
+            row,col = loc.split(',')
+
+            blackboad[0][agt[0][2]] = (int(row),int(col))
+
+        for loc,box in self.world_state.boxes.items():
+            row,col = loc.split(',')
+
+            blackboard[0][box[0][2]+len_agents] = (int(row),int(col))
+
+        
+        #Set coordinates after 1 action
+        for agt in agents: 
+            agt_id = agt[0][2]
+
+            try:
+                action = agent.plan[0]
+            except:
+                blackboard[1][agt_id] = blackboard[0][agt_id]
+                continue
+    
+            if action.action_type is ActionType.NoOp:
+                    blackboard[1][agt_id] = blackboard[0][agt_id] 
+                    
+            elif action.action_type is ActionType.Move:
+                agt_row, agt_col = blackboard[0][agt_id]
+                
+                new_agt_row = agt_row + action.agent_dir.d_row
+                new_agt_col = agt_col + action.agent_dir.d_col
+
+                blackboard[1][agt_id] = (new_agt_row,new_agt_col)
+                
+            elif action.action_type is ActionType.Push:
+                agt_row, agt_col = self.blackboard[0][agt_id]
+                new_agt_row = agt_row + action.agent_dir.d_row
+                new_agt_col = agt_col + action.agent_dir.d_col
+
+                box_row = new_agt_row 
+                box_col = new_agt_col 
+                
+                new_box_row = box_row + action.box_dir.d_row
+                new_box_col = box_col + action.box_dir.d_col
+
+                box_id =  self.world_state.boxes[f'{box_row},{box_col}'][0][2]
+
+
+                blackboard[1][agt_id] = (new_agt_row,new_agt_col)
+                blackboard[1][box_id+len_agents] = (new_box_row,new_box_col)
+
+                stationary_boxes[box_id] = False
+
+            elif action.action_type is ActionType.Pull:
+                agt_row, agt_col = self.blackboard[0][agt_id]
+                new_agt_row = agt_row + action.agent_dir.d_row
+                new_agt_col = agt_col + action.agent_dir.d_col
+
+                box_row = agt_row +  action.box_dir.d_row
+                box_col = agt_col +  action.box_dir.d_col
+                
+                new_box_row = agt_row 
+                new_box_col = agt_col
+
+                
+                box_id = self.world_state.boxes[f'{box_row},{box_col}'][0][2]
+                
+                blackboard[1][agt_id] = (new_agt_row,new_agt_col)
+                blackboard[1][box_id+len_agents] = (new_box_row,new_box_col)
+
+                stationary_boxes[box_id] = False
+
+            #Update coordinatew for stationary boxes
+
+            for idx, box in enumerate(stationary_boxes):
+                if stationary:
+                    blackboard[1][idx+len_agents] = blackboard[0][idx+len_agents] 
+
+
+        def _blackboard_conflictSolver(self, blackboad, agents:list):
+
+            len_agents = len(agents)
+            hashing_prereq = defaultdict(list)
+
+            for idx, obj in enumerate(blackboard[1]):
+
+                hashing_prereq[hash(loc)].append(idx)
+                for p_idx,p_loc in enumerate(blackboard[0]):
+                    if p_idx != idx:
+                        hashing_prereq[hash(p_loc)].append(p_idx)
+
+                for _,v in hashing_prereq.items():
+                    #If multiple indexes - hash to same value, then we have a conflict
+                    if len(v) > 1:
+                        for v_id in v:
+                            if v_id != idx:
+                                
+                                #Check if stationary (have not moved from T-1  to T)
+                                if blackboad[0][v_id] == blackboad[1][v_id]:
+
+                                    #Check level structure. 
+                                    if blackboard[0][v_id] in self.world_state.wells:
+                                        
+                                        #If agent
+                                        if v_id < len_agents:
+
+
+                                        else:
+                                            #If box, find the agent that moved
+
+
+
+                                    elif blackboard[0][v_id] in self.world_state.tunnels:
+
+                                    elif blackboard[0][v_id] in self.world_state.junctions:
+
+
+                                    '''
+                                    Fortsæt herfra - implementering af håndtering af forskellige situaionter. Hvis prereq ikke er stationær og så alle mulighederne for walls/tunnels/junctions osv. 
+
+                                    '''
+
+
+
+
+
+
+
+
+        
+        
+
+
+
+
+
 
     def _create_blackboard(self):
 
@@ -172,7 +317,7 @@ class ConflictManager:
     def _conflicts_in_blackboard(self,agents:list, min_plan_length, time, len_agents):
         
         '''
-        tiem = global time. So start at time+1, so we can check prereq of first action
+        time = global time. So start at time+1, so we can check prereq of first action
         '''
 
         ################################
@@ -192,16 +337,16 @@ class ConflictManager:
             
             for idx,loc in enumerate(state):
                 
-                hashing_prereq[hash(loc)].append(-idx)
+                hashing_prereq[hash(loc)].append(idx)
                 for p_idx,p_loc in enumerate(prereq):
                     if p_idx != idx:
                         hashing_prereq[hash(p_loc)].append(p_idx)
                 
-                for k, v in hashing_prereq.items():
+                for _ , v in hashing_prereq.items():
                     if len(v) > 1:
                         for obj_id in v:
-                            #Check greater than 0, to avid state-ovject (only look in prereq)
-                            if obj_id >= 0:
+                            #Only look in prereq id's
+                            if obj_id != idx:
                                 #Check if stationary (have not moved from T-1  to T)
                                 if state[obj_id] == prereq[obj_id]:
                                     #STATIONARY
@@ -210,6 +355,57 @@ class ConflictManager:
                                     '''
                                     REPLANNING
                                     '''
+                                    #If agent
+
+
+                                    if prereq[obj_id] in self.world_state.wells:
+
+                                        if self.world_state.wells[prereqs[obj_id]][1] > self.world_state.wells[prereqs[idx]][1]:
+                                            #idx_object is deeper in well. 
+                                            if obj_id < len(agents):
+                                                '''
+                                                ASK AGENT TO MOVE OUT OF WELL
+                                                '''
+                                            else:
+                                                '''
+                                                ASK TO GET BOX MOVED OUT FROM WELL
+                                                '''
+                                        else:
+                                            #stationary object is deeper in well
+                                            '''
+                                            MOVE OUT FROM WELL 
+
+                                            '''
+                                            if obj_id < len(agents):
+                                                '''
+                                                
+                                                '''
+
+
+                                            #get plan of prereq[obj_id]
+                                            
+
+                                        elif prereq[obj_id] in self.world_state.tunnel:
+
+                                        elif 
+
+
+                                    #If prereq[obj_id] == agent:
+                                    #       prereq[obj_id].get_out_of_the_way
+
+                                            #if not possible (tunnel/junction)
+                                            #state[idx] flyt først 
+
+
+                                    #else box:
+                                    #   if prereq[obj_id]: in tunnel/junction/well:
+                                            #request move of prereq[obj_id]
+                                        #else:
+                                            #replan udenom 
+
+
+
+
                                     pass
 
 
@@ -240,7 +436,7 @@ class ConflictManager:
             for idx,loc in enumerate(state):
                 hashing_state[hash(loc)].append(idx)
 
-            for k, v in hashing_state.items():
+            for  _ , v in hashing_state.items():
                 if len(v) > 1:
                     
                     agt_collish = []
@@ -259,6 +455,10 @@ class ConflictManager:
                     
                     
 
+
+                    #TODO Lav det her om til at først søge på plan kategori prioritet 
+
+                    #Prioritize agents with longest plan
                     agt_plan_lens = [len(agt.plan) for agt in agt_collish]
                     agt_replan = [False]*len(agt_collish)
                     
@@ -383,18 +583,7 @@ class ConflictManager:
                     for i in range(T,T+len(agent.plan)):
                         self.blackboard[i][b_id+len_agents] = self.blackboard[i-1][b_id+len_agents]
 
-        
-
-
-
-            
-            
-
-
-
-
-        
-
+     
     '''
     For prereqs: Hvis en agent's prereqs ikke er opfyldt så skal den have NoOp, hvis ikke det er et illegalt move
 
