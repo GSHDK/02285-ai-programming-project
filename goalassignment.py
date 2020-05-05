@@ -6,12 +6,10 @@ from utils import cityblock_distance
 import sys
 from action import ActionType, Action
 import config
-
-
+from utils import _get_agt_loc, _get_box_loc
 
 '''
 The goal of the assigner is from a given goal state
-
 
 '''
 
@@ -50,7 +48,6 @@ class GoalAssigner(Assigner):
     def create_tasks(self):
         '''
         Start of by creating an auction where boxes are bidding their manhatten distanve
-
 
         :return: list of tasks
         '''
@@ -139,7 +136,6 @@ class GoalAssigner(Assigner):
         for element in self.agents:
             if len(element.plan) == 0:
                 # We first get the goallocations still needing boxex
-
                 # Potential boxes
                 # TODO: I think this also has agents in it
                 list_of_potential_elements = self.world_state.colors_reverse[element.agent_color]
@@ -180,55 +176,23 @@ class GoalAssigner(Assigner):
                 # Update tasks by removing element
                 self.agent_tasks.pop(agent.agent_char)
             else:
-                # No able usefull actions
+                # No possible assignments found for agent
+                agent.plan_category = 1
+
+                # TODO: Decide where the noop actions should be placed
                 agent.plan.append(Action(ActionType.NoOp, None, None))
 
         self._delegate_tasks_agent(assignments_a)
 
-
-
     def _delegate_tasks_box(self, assignments):
         for k, v in assignments.items():
+            v.plan_category = 4
             v.search_box(self.world_state, self.box_tasks[k][1], k)
             # Update tasks by removing element
             self.box_tasks.pop(k)
 
     def _delegate_tasks_agent(self, assignments):
         for k, v in assignments.items():
+            v.plan_category = 3
             v.search_position(self.world_state, k)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

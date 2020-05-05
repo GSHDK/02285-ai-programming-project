@@ -4,15 +4,17 @@ import memory
 from collections import deque
 from state import State
 from collections import defaultdict
-from strategy import StrategyBestFirst
+from strategy import StrategyBestFirst,StrategyBFS
 from heuristic import heuristic_func, heuristic
+from utils import _get_agt_loc, _get_box_loc
+
 
 
 # Super class that all agent classes inharit functions form
 class Agent(metaclass=ABCMeta):
 
     @abstractmethod
-    def search_box(self) -> 'Action': raise NotImplementedError
+    def search_box(self, world_state: 'State', box_from, box_to) -> 'Action': raise NotImplementedError
 
 '''
 Agents are given a goal by a central unit and plan how to achieve this goal themselves
@@ -21,7 +23,6 @@ agent_goal_task
 (Box_name, (start_location, end_location)
 
 '''
-
 
 class search_agent(Agent):
 
@@ -36,7 +37,7 @@ class search_agent(Agent):
         self.plan_category = int
 
         self.heuristic = heuristic
-        self.strategy = strategy()
+        self.strategy = strategy
 
     def __repr__(self):
         return 'search agent'
@@ -48,7 +49,16 @@ class search_agent(Agent):
 
         self.world_state = State(world_state)
         print('Starting search with strategy {}.'.format(self.strategy), file=sys.stderr, flush=True)
-        strategy = self.strategy
+
+        # TODO: CHECK IF STRATEGY REFERS TO THE SAME OBJECT BEFORE IMPLEMENTING MULTI PROC
+
+        if self.strategy == StrategyBestFirst:
+            strategy = self.strategy(heuristic.AStar(self.world_state, heuristic_func.h_goalassigner_box,
+                                                         agent_char=self.agent_char,
+                                                         box_id=self.world_state.boxes[box_from][0][2],
+                                                         box_to=box_to))
+        else:
+            strategy = self.strategy()
         # In case there has been a previous search we need to clear the elements in the strategy object
         strategy.reset_strategy()
 
@@ -92,7 +102,7 @@ class search_agent(Agent):
                 break
 
             strategy.add_to_explored(leaf)
-            x=strategy.explored.pop()
+            x = strategy.explored.pop()
             strategy.explored.add(x)
 
             for child_state in leaf.get_children(self.agent_char):  # The list of expanded states is shuffled randomly; see state.py.
@@ -110,6 +120,17 @@ class search_agent(Agent):
 
         self.world_state = State(world_state)
         print('Starting search with strategy {}.'.format(self.strategy), file=sys.stderr, flush=True)
+
+        # TODO: CHECK IF STRATEGY REFERS TO THE SAME OBJECT BEFORE IMPLEMENTING MULTI PROC
+
+        if self.strategy == StrategyBestFirst:
+            strategy = self.strategy(heuristic.AStar(self.world_state, heuristic_func.h_goalassigner_pos,
+                                                         agent_char=self.agent_char,
+                                                         agent_to=agent_to))
+        else:
+            strategy = self.strategy()
+        # In case there has been a previous search we need to clear the elements in the strategy object
+        strategy.reset_strategy()
         strategy = self.strategy
         # In case there has been a previous search we need to clear the elements in the strategy object
         strategy.reset_strategy()
@@ -201,9 +222,6 @@ class search_agent(Agent):
                 return None
 
             leaf = strategy.get_and_remove_leaf()
-            # print(strategy.heuristic.h(leaf), file=sys.stderr, flush=True)
-            # print(f"{leaf.boxes} boxes", file=sys.stderr, flush=True)
-            # print(f"{leaf.agents} agents", file=sys.stderr, flush=True)
 
             # h=0 is the same as goal
             # TODO: Update this to work with something else
@@ -215,6 +233,79 @@ class search_agent(Agent):
             x = strategy.explored.pop()
             strategy.explored.add(x)
             for child_state in leaf.get_children(self.agent_char):
+                if not strategy.is_explored(child_state) and not strategy.in_frontier(child_state):
+                    strategy.add_to_frontier(child_state)
+            iterations += 1
+
+    def search_conflict_bfs_not_in_list(self, world_state: 'State', agent_collision_char, agent_collision_box,
+                                        coordinates: list):
+        '''
+        This search method uses bfs to find the first location the agent can move to without being in the list
+        of coordinate
+
+        :param agent_collision_box: id of box involved in collision
+        :param agent_collision_char: id of agent involved in collision
+        :param world_state:
+        :param coordinates:
+        :return: None (update the plan of the agent to not interfer with the coordinates give
+        '''
+
+
+        self.world_state = State(world_state)
+
+        removed_dict = {k: v for k, v in self.world_state.agents.items() if (v[0][1] == self.agent_char)
+                        or (v[0][1] == agent_collision_char)}
+
+        self.world_state.agents = defaultdict(list, removed_dict)
+
+        removed_dict = {k: v for k, v in self.world_state.boxes.items() if (v[0][2] == self.current_box_id)
+                        or (v[0][2] == agent_collision_box)}
+
+        self.world_state.boxes = defaultdict(list, removed_dict)
+
+        strategy = StrategyBFS()
+
+        # In case there has been a previous search we need to clear the elements in the strategy object
+        strategy.reset_strategy()
+
+        strategy.add_to_frontier(state=self.world_state)
+
+        iterations = 0
+        while True:
+            if iterations == 1000:
+                print(strategy.search_status(), file=sys.stderr, flush=True)
+                iterations = 0
+
+            if memory.get_usage() > memory.max_usage:
+                print('Maximum memory usage exceeded.', file=sys.stderr, flush=True)
+                return None
+
+            if strategy.frontier_empty():
+                ''' 
+                # TODO: Could not find a location where agent is not "in the way" - return something that triggers
+                the other collision object to move out of the way
+                '''
+                raise NotImplementedError()
+
+            leaf = strategy.get_and_remove_leaf()
+            agt_loc = _get_agt_loc(leaf, self.agent_char)
+            box_loc = _get_box_loc(leaf, self.current_box_id)
+
+            if agt_loc not in coordinates and box_loc not in coordinates:
+                raise NotImplementedError('The agent has found a location where it '
+                                          'can move to overwrite original plan and change state')
+                self._convert_plan_to_action_list(leaf.extract_plan())
+                break
+
+            strategy.add_to_explored(leaf)
+            x = strategy.explored.pop()
+            strategy.explored.add(x)
+
+            for child_state in leaf.get_children(
+                    self.agent_char):  # The list of expanded states is shuffled randomly; see state.py.
+                # print("child box location value{}".format(child_state.boxes), file=sys.stderr, flush=True)
+                # print("set value{}".format(x.__hash__()), file=sys.stderr, flush=True)
+                # print("child value{}".format(child_state.__hash__()), file=sys.stderr, flush=True)
                 if not strategy.is_explored(child_state) and not strategy.in_frontier(child_state):
                     strategy.add_to_frontier(child_state)
             iterations += 1

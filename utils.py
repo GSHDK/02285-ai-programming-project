@@ -17,3 +17,17 @@ def _remove_element(list_elements, position):
         list_elements[position].pop(0)
     else:
         list_elements.pop(position)
+
+
+def _get_agt_loc(state, agent_char):
+    for key, value in state.agents.items():
+        if value[0][1] == agent_char:
+            return key
+    raise Exception('Agent not found')
+
+
+def _get_box_loc(state, box_id):
+    for key, value in state.boxes.items():
+        if box_id == value[0][2]:
+            return key
+    raise Exception('Box not found')

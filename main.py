@@ -5,7 +5,7 @@ import memory
 import config
 from searchclient import SearchClient
 from agent import search_agent
-from strategy import StrategyBFS, StrategyDFS
+from strategy import StrategyBFS, StrategyDFS, StrategyBestFirst
 from goalassignment import *
 from conflictManager import ConflictManager
 from state import State
@@ -43,7 +43,7 @@ def main():
     # Create list of agents
     list_agents = []
     for k, v in current_state.reverse_agent_dict().items():
-        list_agents.append(search_agent(k, v[0], StrategyBFS))
+        list_agents.append(search_agent(k, v[0], StrategyBestFirst))
 
     list_agents.sort()
     x = GoalAssigner(current_state, list_agents)

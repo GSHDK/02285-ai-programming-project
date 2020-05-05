@@ -11,3 +11,17 @@ A print statement should look like this:
 print(f'Done with loading data', file=sys.stderr, flush=True)
 
 and will print to the terminal where the command is executed
+
+
+### Planning categories 
+Initial logic. Agents will always help others and discard own assignments
+
+
+* No task - 1
+* Move out of way - 2
+* Goal assigner - location 3
+* Goal assigner - box 4
+* Awaiting help - !"#  
+* Solving help task - 6
+
+
