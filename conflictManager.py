@@ -21,18 +21,23 @@ class ConflictManager:
         '''
         self.world_state = None
         
-        #self.blackboard = 
+        
         self.stationary_agents = []
         self.stationary_boxes = []
         self.shortest_plan_agt = None #Agent with shortest plan
+
+        self.replanner = Replanner()
 
 
         #self._create_blackboard()
        
 
 
-    def blackboard_step(self,agents:list)
+    def blackboard_update(self,agents:list):
 
+        #ASSUME WORLDSTATE IS UPDATED HERE 
+
+        
         len_agents = len(agents)
         stationary_boxes = [True]*len(self.world_state.boxes)
 
@@ -109,55 +114,178 @@ class ConflictManager:
 
                 stationary_boxes[box_id] = False
 
-            #Update coordinatew for stationary boxes
+            #Update coordinates for stationary boxes
 
             for idx, box in enumerate(stationary_boxes):
                 if stationary:
                     blackboard[1][idx+len_agents] = blackboard[0][idx+len_agents] 
+        return blackboard
+        
+
+    def _blackboard_conflictSolver(self, agents:list):
+
+        blackboard = self.blackboard_update(agents)
+
+        len_agents = len(agents)
+        
+        #Check prereqs
+        for idx, obj in enumerate(blackboard[1]):
+            
+            prereq_state = defaultdict(list)
+
+            #Define idx agent
+            if idx < len_agents:
+                agt = agents[idx]
+            else:
+                box_id = idx - len_agents
+                agt = [agt for agt in agents if agt.sub_goal_box == box_id][0]
 
 
-        def _blackboard_conflictSolver(self, blackboad, agents:list):
+            prereq_state[loc].append(idx)
+            for p_idx,p_loc in enumerate(blackboard[0]):
+                if p_idx != idx:
+                    prereq_state[p_loc].append(p_idx)
 
-            len_agents = len(agents)
-            hashing_prereq = defaultdict(list)
+            for _,v in prereq_state.items():
+                #If multiple indexes hash to same value, then we have a conflict
+                if len(v) > 1:
+                    for v_id in v:
+                        if v_id != idx:
+                            
+                            #Check if stationary (have not moved from T-1  to T)
+                            if blackboard[0][v_id] == blackboard[1][v_id]:
 
-            for idx, obj in enumerate(blackboard[1]):
+                                #Check WELL. 
+                                if blackboard[0][v_id] in self.world_state.wells:
+                                    #If blackboard[0] stationary collision is in well, we have two scenarios: 
+                                        #blackboard[1][idx] is also in a well - Then find out who is closest to exit
+                                        #blackboard[1] is not in well- then stationary object is guaranteed to be deepest 
 
-                hashing_prereq[hash(loc)].append(idx)
-                for p_idx,p_loc in enumerate(blackboard[0]):
-                    if p_idx != idx:
-                        hashing_prereq[hash(p_loc)].append(p_idx)
+                                    if blackboard[0][idx] in self.world_state.wells:
+                                        #Find deepest agent/box
+                                        if self.world_state.wells[blackboard[0][v_id]] < self.world_state.wells[blackboard[0][idx]]:
+                                            #Stationary object is deepest.
+                                            '''
+                                            agt.MOVE OUT FROM WELL
+                                            
+                                            if v_id < len_agents:
+                                                agents[v_id].MOVE OUT FROM WELL
+                                            else:
+                                                REQUEST MOVE OF STATIONARY BOX
 
-                for _,v in hashing_prereq.items():
-                    #If multiple indexes - hash to same value, then we have a conflict
-                    if len(v) > 1:
-                        for v_id in v:
-                            if v_id != idx:
-                                
-                                #Check if stationary (have not moved from T-1  to T)
-                                if blackboad[0][v_id] == blackboad[1][v_id]:
-
-                                    #Check level structure. 
-                                    if blackboard[0][v_id] in self.world_state.wells:
-                                        
-                                        #If agent
-                                        if v_id < len_agents:
-
-
+                                            '''
                                         else:
-                                            #If box, find the agent that moved
+                                            #Moving object is deepest
+                                            '''
+                                            if v_id < len_agents:
+                                                agents[v_id].MOVE OUT FROM WELL
+                                            else:
+                                                REQUEST MOVE OF STATIONARY BOX
 
 
+                                            agt.NoOp(until object it out of plan)
 
-                                    elif blackboard[0][v_id] in self.world_state.tunnels:
 
-                                    elif blackboard[0][v_id] in self.world_state.junctions:
+                                            '''
+                                    else:
+                                        '''
+                                        agt.MOVE OUT FROM WELL         
+                                            if v_id < len_agents:
+                                                agents[v_id].MOVE OUT FROM WELL
+                                            else:
+                                                REQUEST MOVE OF STATIONARY BOX
+                                        '''
 
+                                #Check TUNNEL
+                                elif blackboard[0][v_id] in self.world_state.tunnels:
+                                    '''
+                                    if v_id < len_agents:
+                                        v_id.MOVE OUT OF idx.plan
+                                    else:
+                                        ASK TO GET BOX MOVED
+                                        idx.NoOp
+                                        idx.stadie = awaiting help
 
                                     '''
-                                    Fortsæt herfra - implementering af håndtering af forskellige situaionter. Hvis prereq ikke er stationær og så alle mulighederne for walls/tunnels/junctions osv. 
 
-                                    ''' 
+                                #Check JUNCTION
+                                elif blackboard[0][v_id] in self.world_state.junctions:
+                                    pass
+                                
+
+                                #If in open field
+                                else:
+                                    '''
+                                    if idx < len_agents:
+                                        agents[idx].REPLAN AROUND
+
+                                    else:
+                                        box_id = idx-len_agents
+                                        agt  = [agt for agt in agents if agt.sub_goal_box == box_id][0]
+                                        agt.REPLAN AROUND
+                                    '''
+                            else:
+                                #NOT STATIONARY
+
+                                '''
+                                TODO: USE JOB Importance to determine who to move 
+                                '''
+
+                                #Check if opposite directions of movement:
+                                if blackboard[0][idx] == blackboard[1][v_id]:
+                                    '''
+                                    EVENTUELT: 
+                                        if in tunnel/well: 
+                                            løs anderledes
+                                    
+                                    1 søger væk fra nr2's plan
+                                    nr2 fortsætter sin gamle plan
+                                    
+                                    '''
+
+                                else:
+                                    '''
+                                    agt.plan.push(NoOp)
+                                    '''
+
+                                #if blackboard[1][idx] not in Blackboard[2]:
+                                #    '''
+                                #    agt.plan.push(NoOp)
+                                #    agt.plan.push(NoOp) 
+                                #    '''
+                                #else:
+                                #    #Bude ikke kunne ske?
+                                #    '''
+                                #    agt.REPLAN UDENOM
+                                #    '''
+                               
+        #Update blackboard after new actions are pushed that fixes prereqs
+        blackboard = self.blackboard_update(agents)
+
+
+        #Check actual collisions
+        current_state = defaultdict(list)
+        for idx, obj in enumerate(blackboard[1]):
+            current_state[blackboard[1][idx]].append(idx)
+        
+        for loc,v in current_state.items():
+            if len(v) > 1:
+                '''
+                For collisions we prioritize the agent with the most important job
+                '''
+
+                #In region of interest?
+                if blackboard[1][loc] in self.world_state.wells:
+                    pass
+                elif blackboard[1][loc] in self.world_state.tunnel:
+                    pass
+                elif blackboard[1][loc] in self.world_state.juntions:
+                    pass
+                else:
+                    #In open space 
+                    pass
+                    
+
 
 
 
@@ -333,16 +461,16 @@ class ConflictManager:
             prereq = self.blackboard[i-1]
             state = self.blackboard[i]
 
-            hashing_prereq = defaultdict(list)
+            prereq_state = defaultdict(list)
             
             for idx,loc in enumerate(state):
                 
-                hashing_prereq[hash(loc)].append(idx)
+                prereq_state[hash(loc)].append(idx)
                 for p_idx,p_loc in enumerate(prereq):
                     if p_idx != idx:
-                        hashing_prereq[hash(p_loc)].append(p_idx)
+                        prereq_state[hash(p_loc)].append(p_idx)
                 
-                for _ , v in hashing_prereq.items():
+                for _ , v in prereq_state.items():
                     if len(v) > 1:
                         for obj_id in v:
                             #Only look in prereq id's
