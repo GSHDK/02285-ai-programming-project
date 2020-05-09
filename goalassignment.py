@@ -27,6 +27,11 @@ class GoalAssigner(Assigner):
         self.assigned_tasks = []
         self.box_tasks, self.agent_tasks = self.create_tasks()
 
+
+
+        #TODO: Make sure to initialize this variable in main 
+        self.goal_dependencies = None
+
         # self.color_goals = self.create_color_goals()
 
     def assign_agents(self):

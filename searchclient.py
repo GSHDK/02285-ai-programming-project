@@ -14,6 +14,7 @@ class SearchClient:
         self.initial_state = None
         self.max_row = -1
         self.max_col = -1
+        self.goal_dependencies = []
         
 
         try:
@@ -135,19 +136,19 @@ class SearchClient:
                     
                     if i != 0:
                         if f'{i-1},{j}' not in self.initial_state.walls:
-                           connection_graph[(i,j)].append((i-1,j))
+                           connection_graph[f'{i},{j}')].append(f'{i-1},{j}')
 
                     if i != self.max_row:
                         if f'{i+1},{j}' not in self.initial_state.walls:
-                            connection_graph[(i,j)].append((i+1,j))
+                            connection_graph[f'{i},{j}'].append(f'{i+1},{j}')
 
                     if j != 0:
                         if f'{i},{j-1}' not in self.initial_state.walls:
-                           connection_graph[(i,j)].append((i,j-1))
+                           connection_graph[f'{i},{j}'].append(f'{i},{j-1}')
 
                     if j != self.max_col:
                         if f'{i},{j+1}' not in self.initial_state.walls:
-                            connection_graph[(i,j)].append((i,j+1))
+                            connection_graph[f'{i},{j}'].append(f'{i},{j+1}')
         
         
         returned = set()
@@ -203,7 +204,7 @@ class SearchClient:
             del self.initial_state.agents[loc]
         
         a_inter_id = 0
-        for loc,agt in self.initial_state.agents.items():
+        for _,agt in self.initial_state.agents.items():
             agt[0][2] = a_inter_id
             a_inter_id+=1
 
@@ -214,7 +215,7 @@ class SearchClient:
             del self.initial_state.boxes[loc]
         
         b_id= 0
-        for loc,box in self.initial_state.boxes.items():
+        for _,box in self.initial_state.boxes.items():
             box[0][2] = b_id
             b_id+=1    
 
@@ -252,26 +253,35 @@ class SearchClient:
 
                     self.initial_state.tunnels.add(node)
 
-                #Potential junction
-                elif num_connections == 3: 
-                    ####
-                    ####
-                    #TODO: Definer logik for junction   
-                    ####
-                    ####
-                    pass
+                
 
-        
         #Transform tunnels into wells where necessary
         #TODO: Overvej om dette rekursive kald er vejen frem (store levels)
+
+        #Also define goal dependencies
+        
         for well in [w for w in self.initial_state.wells]:
-            self.makeWell(connection_graph,well,0)
+            listo = []
+            self.makeWell(connection_graph,well,0,listo)
+            
+            if len(listo)> 0:
+                self.goal_dependencies.append(listo)
+
+        
+        #Iterate over goals, so we can define which goals have dependencies and which does not:
+        for loc in self.initial_state.goal_positions:
+            not_in = True
+            for dependency in self.goal_dependencies:
+                if loc in dependency:
+                    not_in = False
+            
+            if not_in:
+                self.goal_dependencies.append([loc])
+        
+        
         
 
 
-
-        
-        #TODO Saml op herfra. 
 
 
 
@@ -302,8 +312,11 @@ class SearchClient:
         return explored
 
     
-    def makeWell(self, graph, coordinate,cost):
+    def makeWell(self, graph, coordinate,cost,goal_priority_list):
             
+            if coordinate in self.initial_state.goal_positions:
+                goal_priority_list.append(coordinate)
+
             #Recursively find and identify wells
             connects = graph[coordinate]
             for con in connects:
@@ -313,7 +326,9 @@ class SearchClient:
                         self.initial_state.wells[con] = cost+1
                         self.initial_state.tunnels.remove(con)
                         
-                        self.makeWell(graph,con,cost+1)
+                        self.makeWell(graph,con,cost+1,goal_priority_list)
+            
+
                     
 
                         
