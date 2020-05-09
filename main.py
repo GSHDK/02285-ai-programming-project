@@ -10,6 +10,7 @@ from goalassignment import *
 from conflictManager import ConflictManager
 from state import State
 from copy import deepcopy as cp
+from preprocessing import create_dijkstras_map
 
 
 def main():
@@ -38,7 +39,18 @@ def main():
     '''
     Testing assigner 
     '''
+
+    preprocessing_current_state = State(client.initial_state)
+
+    '''
+    Create Dijkstras mapping for all goal location
+    
+    For all goal_locations do
+        Create BFS From location
+    
+    '''
     current_state = State(client.initial_state)
+    current_state. create_dijkstras_map(preprocessing_current_state)
 
     # Create list of agents
     list_agents = []
