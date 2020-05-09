@@ -21,10 +21,11 @@ class Assigner(metaclass=ABCMeta):
 
 class GoalAssigner(Assigner):
 
-    def __init__(self, world_state: 'State', list_of_agents=None):
+    def __init__(self, world_state: 'State', goal_dependencies: list, list_of_agents=None):
         self.world_state = world_state
         self.agents = list_of_agents
         self.assigned_tasks = []
+        self.goal_dependencies = goal_dependencies
         self.box_tasks, self.agent_tasks = self.create_tasks()
 
 
@@ -57,38 +58,38 @@ class GoalAssigner(Assigner):
         :return: list of tasks
         '''
 
+
+        # TODO: Create a update task function to handel dependencies
+
+
         # Creates all potential boxes to be moved
         box_tasks = defaultdict(list)
         used_ids = set()
         for key, value in self.world_state.boxes_goal.items():
+            # Every goal_location
             for element in value:
-                for key_box, value_box in self.world_state.boxes.items():
-                    if (value_box[0][1] == key) and (key_box not in used_ids):
-                        if not len(box_tasks[element]):
-                            box_tasks[element] = [key, key_box,
-                                                   cityblock_distance(element, key_box), value_box[0][2]]
+                for box, value_box in self.world_state.boxes.items():
+                    # If char is the same and box not assigned and same connected componet
+                    if ((element, box) in self.world_state.dijkstras_map) \
+                            and (value_box[0][2] not in used_ids) \
+                            and (value_box[0][1] == key):
+
+                        # default dict shit
+                        if element not in box_tasks:
+                            # box goal location, box_id
+                            box_tasks[element] = [key, value_box[0][2]]
+                            _temp_loc = box
+                            _temp_dist = self.world_state.dijkstras_map[(element, _temp_loc)]
                         else:
-                            if box_tasks[element][2] > cityblock_distance(element, key_box):
-                                box_tasks[element] = [key, key_box,
-                                                           cityblock_distance(element, key_box)]
+                            _x = self.world_state.dijkstras_map[(element, box)]
+                            if _temp_dist > _x:
+                                box_tasks[element] = [key, value_box[0][2]]
+                                temp_loc = box
+                                _temp_dist = _x
+
                 used_ids.add(box_tasks[element][1])
 
-        agent_tasks = defaultdict(list)
-        used_ids = set()
-        for key, value in self.world_state.agents_goal.items():
-            for element in value:
-                for k, v in self.world_state.agents.items():
-                    if (v[0][1] == key) and (k not in used_ids):
-                        if not len(agent_tasks[key]):
-                            agent_tasks[key] = [element, k,
-                                                    cityblock_distance(element, k)]
-                        else:
-                            if agent_tasks[key][2] > cityblock_distance(element, k):
-                                agent_tasks[key] = [element, key_box,
-                                                        cityblock_distance(element, k)]
-                used_ids.add(agent_tasks[key][1])
-
-        # print(box_tasks, file=sys.stderr, flush=True)
+        agent_tasks = self.world_state.agents_goal
         return box_tasks, agent_tasks
 
     def assign_tasks(self):
@@ -136,32 +137,89 @@ class GoalAssigner(Assigner):
         self._delegate_tasks_agent(assignments_a)
 
     def reassign_tasks(self):
+
+        # Find what job are currently getting executed
+        current_execution = set()
+        for agt in self.agents:
+            if agt.goal_job_id is not None:
+                current_execution.add(agt.goal_job_id)
+
+        # Find goals currently satisfied
+        solved_tasks = set()
+        for task, values in self.box_tasks.items():
+            if task in self.world_state.boxes.key():
+                # TODO: change values[3] to refer to correct element (box id)
+                if self.world_state.boxes[task] == values[3]:
+                    # Save the task_id (goal_location)
+                    solved_tasks.add(task)
+
+        # All tasks
+        all_tasks = set(y for y in self.box_tasks.keys())
+
+        # All potential without handeling dependencies in excecution ..
+        potential_tasks = all_tasks.difference(current_execution)
+        potential_tasks = potential_tasks.difference(solved_tasks)
+
+        # All unsolved tasks with dependencies
+        pending_tasks = set()
+        for task in potential_tasks:
+            if len(self.goal_dependencies[task])>0:
+                for element in self.goal_dependencies[task]:
+                    if element not in solved_tasks:
+                        pending_tasks.add(task)
+                        break
+
+        # Genereate reversed box dict
+        box_reversed = self._box_reversed()
+
+        # ready to be assigned
+        potential_tasks = potential_tasks.difference(pending_tasks)
+
         used_ids = set()
         assignments = dict()
         for element in self.agents:
             if len(element.plan) == 0:
                 # We first get the goallocations still needing boxex
                 # Potential boxes
-                # TODO: I think this also has agents in it
+
+                # Creates list of box chars agent is allowed to move
                 list_of_potential_elements = self.world_state.colors_reverse[element.agent_color]
                 list_of_potential_elements = [x for x in list_of_potential_elements if x not in config.agent_list_str]
+
+                # Remove boxes not in same connected-component
+                list_of_potential_elements
 
                 min_dist = 10 ** 5
                 best_element = None
 
+                # location, (char, id_box)
                 for k, v in self.box_tasks.items():
-                    if (self.world_state.goal_positions[k] in list_of_potential_elements) and k not in used_ids:
+
+                    # A goal task that dosent need solving
+                    if k not in potential_tasks:
+                        continue
+
+                    # Find char of this goal location and asses if we can move it
+                    # make sure task is not assigned
+                    # make sure connected_comp is the same
+                    if (self.world_state.colors[v[0]] == element.agent_color) \
+                            and (k not in used_ids)\
+                            and (element.connected_component_id == box_reversed[v[1]][1]):
                         # Gives current distance from agent to box
-                        temp_dist = cityblock_distance(self.world_state.reverse_boxes_dict()[v[3]][0],
+                        temp_dist = cityblock_distance(self.world_state.reverse_boxes_dict()[v[1]][0],
                                                        self.world_state.reverse_agent_dict()[element.agent_char][1])
                         if min_dist > temp_dist:
-                            best_element = (k, self.world_state.reverse_boxes_dict()[v[3]][0])
+                            # box_goal id, assigned box location
+                            best_element = (k, self.world_state.reverse_boxes_dict()[v[1]][0])
                             min_dist = temp_dist
 
                 used_ids.add(best_element)
                 if best_element is None:
+                    # no assignment for this agent
                     continue
                 assignments[best_element] = element
+
+        # If new box tasks found for agent - create format for delegate and assign
         if len(assignments) > 0:
             temp_dict = {}
             for k,v in assignments.items():
@@ -173,15 +231,16 @@ class GoalAssigner(Assigner):
 
         # The agents that dosen't have a task should move to a goal location
         potential = list(set(potential) - set([x for x in self.agents if len(x.plan) > 0]))
+
         assignments_a = dict()
         for agent in potential:
-            if agent.agent_char in self.agent_tasks:
+            # Case where the agent has a move goal task, and has not solved it
+            if (agent.agent_char in self.agent_tasks) and (self.agent_tasks[agent.agent_char] not in solved_tasks):
                 assignments_a[self.agent_tasks[agent.agent_char][0]] = agent
 
-                # Update tasks by removing element
-                self.agent_tasks.pop(agent.agent_char)
             else:
                 # No possible assignments found for agent
+                # TODO: CORRECT STATE
                 agent.plan_category = 1
 
                 # TODO: Decide where the noop actions should be placed
@@ -201,3 +260,9 @@ class GoalAssigner(Assigner):
             v.plan_category = 3
             v.search_position(self.world_state, k)
 
+
+    def _box_reversed(self):
+        x = dict()
+        for key, value in self.world_state.boxes():
+            x[value[2]]=[key, value[3]]
+        return x

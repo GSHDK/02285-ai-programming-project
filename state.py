@@ -41,7 +41,7 @@ class State:
             # this default_dict takes as input an agent char an returns a list of string of coordinates with len one
             self.agents_goal = defaultdict(list)
 
-            # this default_dict takes as input the char of the box and returns a list of coordinates for that type of box
+            # this default_dict takes as input the char of the box and returns a list of coordinates for that type of box goal locations
             self.boxes_goal = defaultdict(list)
 
             # this defaultdict takes as input a string of coordinates and returns a list of size 3 with color,char, id of the box
@@ -243,7 +243,7 @@ class State:
     def reverse_agent_dict(self):
         temp = defaultdict(list)
         for key, value in self.agents.items():
-            temp[value[0][1]] = [value[0][0], key]
+            temp[value[0][1]] = [value[0][0], key, value[0][3]]
         return temp
 
     def reverse_boxes_dict(self):

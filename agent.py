@@ -26,15 +26,19 @@ agent_goal_task
 
 class search_agent(Agent):
 
-    def __init__(self, agent_char: int, agent_color: str, strategy, heuristic=None):
+    def __init__(self, agent_char: int, agent_color: str, connected_component_id: int, strategy, heuristic=None):
         super().__init__()
         self.agent_char = agent_char
         self.agent_color = agent_color
+        self.connected_component_id = connected_component_id
 
         # Conflict only interacts with this one
         self.plan = deque()
         self.current_box_id = None
         self.plan_category = int
+
+        # Used to track which jobs are currently assinged in goalassigner - 'goal_location'
+        self.goal_job_id = None
 
         self.heuristic = heuristic
         self.strategy = strategy

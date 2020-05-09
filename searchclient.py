@@ -35,8 +35,8 @@ class SearchClient:
                     self.initial_state.levelname = line
 
                 elif line == "#colors\n":
-                    self.initial_state.colors = {}
-                    self.initial_state.colors = defaultdict(list)
+                    # self.initial_state.colors = {}
+                    # self.initial_state.colors = defaultdict(list)
                     line = server_messages.readline()
                     while "#" not in [c for c in line]:
                         current_color = line.split(':')[0]

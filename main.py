@@ -54,7 +54,8 @@ def main():
     # Create list of agents
     list_agents = []
     for k, v in current_state.reverse_agent_dict().items():
-        list_agents.append(search_agent(k, v[0], StrategyBestFirst))
+        # Char int, color, connectedcomp, strategy
+        list_agents.append(search_agent(k, v[0], v[2], StrategyBestFirst))
 
     list_agents.sort()
     x = GoalAssigner(current_state, list_agents)
@@ -74,8 +75,6 @@ def main():
         for e in list_agents:
             print(f'{e.plan[0]} {e.agent_char} before', file=sys.stderr, flush=True)
 
-
-        
         list_of_actions, agent_illegal_moves  = conflict_manager.fix_collisions(list_agents)
 
         # Update agents without assigned goal
