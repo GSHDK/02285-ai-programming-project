@@ -152,10 +152,10 @@ class ConflictManager:
                         if v_id != idx:
 
                             #Extract locations of interest (from string)
-                            row_0_v_id,col_0_v_id  = [int(x) for x in blackboard[0][v_id].split(',')]
-                            row_1_v_id,col_1_v_id  = [int(x) for x in blackboard[1][v_id].split(',')]
-                            row_0_idx,col_0_idx = [int(x) for x in blackboard[0][idx].split(',')]
-                            row_1_idx,col_1_idx = [int(x) for x in blackboard[1][idx].split(',')]
+                            row_0_v_id,col_0_v_id  = blackboard[0][v_id][0],blackboard[0][v_id][1]
+                            row_1_v_id,col_1_v_id  = blackboard[1][v_id][0],blackboard[1][v_id][1]
+                            row_0_idx,col_0_idx = blackboard[0][idx][0],blackboard[0][idx][1]
+                            row_1_idx,col_1_idx = blackboard[1][idx][0],blackboard[1][idx][1]
 
 
                             
