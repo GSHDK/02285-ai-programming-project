@@ -35,9 +35,8 @@ class ConflictManager:
 
     def create_blackboard(self,agents:list):
 
-        #ASSUME WORLDSTATE IS UPDATED HERE 
+        # ASSUME WORLDSTATE IS UPDATED HERE
 
-        
         len_agents = len(agents)
         stationary_boxes = [True]*len(self.world_state.boxes)
 
@@ -47,7 +46,7 @@ class ConflictManager:
         for loc,agt in self.world_state.agents.items():
             row,col = loc.split(',')
 
-            blackboad[0][agt[0][2]] = (int(row),int(col))
+            blackboard[0][agt[0][2]] = (int(row),int(col))
 
         for loc,box in self.world_state.boxes.items():
             row,col = loc.split(',')
@@ -60,7 +59,7 @@ class ConflictManager:
             agt_id = agt[0][2]
 
             try:
-                action = agent.plan[0]
+                action = agt.plan[0]
             except:
                 blackboard[1][agt_id] = blackboard[0][agt_id]
                 continue
