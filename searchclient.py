@@ -312,7 +312,6 @@ class SearchClient:
                 elif idx in self.initial_state.tunnels_reverse:
                     self.initial_state.tunnels_reverse[idx].append(loc)
                 else:
-                    
                     raise Exception(f'ID mismatch when including mouths in the tunnels/wells, on id: {idx}')
         
         
@@ -322,9 +321,7 @@ class SearchClient:
         
         '''
 
-    def bfs_connected_com ponent(self, graph, start):
-
-
+    def bfs_connected_component(self, graph, start):
         # keep track of all visited nodes
         explored = []
         # keep track of nodes to be checked
