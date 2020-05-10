@@ -315,8 +315,6 @@ class SearchClient:
                     
                     raise Exception(f'ID mismatch when including mouths in the tunnels/wells, on id: {idx}')
         
-        print(f'Wells: {self.initial_state.wells_reverse}',file=sys.stderr,flush=True)
-        print(f'Tunnels: {self.initial_state.tunnels_reverse}',file=sys.stderr,flush=True)
         
         '''
         Eventuelt implementer at en tunnel er et objekt: Indgang, udgang, længde osv
@@ -324,7 +322,7 @@ class SearchClient:
         
         '''
 
-    def bfs_connected_component(self, graph, start):
+    def bfs_connected_com ponent(self, graph, start):
 
 
         # keep track of all visited nodes
