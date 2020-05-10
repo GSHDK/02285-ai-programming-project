@@ -360,6 +360,8 @@ class search_agent(Agent):
                     strategy.add_to_frontier(child_state)
             iterations += 1
 
+
+
     def set_search_strategy(self, heuristic, strategy):
         self.heuristic = heuristic
         self.strategy = strategy
