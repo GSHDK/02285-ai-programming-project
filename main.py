@@ -55,7 +55,7 @@ def main():
     list_agents = []
     for k, v in current_state.reverse_agent_dict().items():
         # Char int, color, connectedcomp, strategy
-        list_agents.append(search_agent(k, v[0], v[2], StrategyBestFirst))
+        list_agents.append(search_agent(k, v[0], v[2], v[3], StrategyBestFirst))
 
     list_agents.sort()
     x = GoalAssigner(current_state, list_agents)

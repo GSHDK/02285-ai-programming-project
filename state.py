@@ -247,7 +247,7 @@ class State:
     def reverse_agent_dict(self):
         temp = defaultdict(list)
         for key, value in self.agents.items():
-            temp[value[0][1]] = [value[0][0], key, value[0][3]]
+            temp[value[0][1]] = [value[0][0], key, value[0][3], value[0][2]]
         return temp
 
     def reverse_boxes_dict(self):

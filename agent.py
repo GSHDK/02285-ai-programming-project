@@ -26,11 +26,12 @@ agent_goal_task
 
 class search_agent(Agent):
 
-    def __init__(self, agent_char: int, agent_color: str, connected_component_id: int, strategy, heuristic=None):
+    def __init__(self, agent_char: int, agent_color: str, agent_internal_id: int, connected_component_id: int, strategy, heuristic=None):
         super().__init__()
         self.agent_char = agent_char
         self.agent_color = agent_color
         self.connected_component_id = connected_component_id
+        self.agent_internal_id = agent_internal_id
 
         # Conflict only interacts with this one
         self.plan = deque()
@@ -287,16 +288,16 @@ class search_agent(Agent):
                     strategy.add_to_frontier(child_state)
             iterations += 1
 
-    def search_conflict_bfs_not_in_list(self, world_state: 'State', agent_collision_char, agent_collision_box,
+    def search_conflict_bfs_not_in_list(self, world_state: 'State', agent_collision_internal_id, agent_collision_box,
                                         coordinates: list):
         '''
         This search method uses bfs to find the first location the agent can move to without being in the list
         of coordinate
 
         :param agent_collision_box: id of box involved in collision
-        :param agent_collision_char: id of agent involved in collision
-        :param world_state:
-        :param coordinates:
+        :param agent_collision_internal_id: id of agent involved in collision
+        :param world_state: world_state with
+        :param coordinates: list of coordinates that the agent is not allowed to be in
         :return: None (update the plan of the agent to not interfer with the coordinates give
         '''
 
@@ -304,7 +305,7 @@ class search_agent(Agent):
         self.world_state = State(world_state)
 
         removed_dict = {k: v for k, v in self.world_state.agents.items() if (v[0][1] == self.agent_char)
-                        or (v[0][1] == agent_collision_char)}
+                        or (v[0][2] == agent_collision_internal_id)}
 
         self.world_state.agents = defaultdict(list, removed_dict)
 
@@ -335,6 +336,7 @@ class search_agent(Agent):
                 # TODO: Could not find a location where agent is not "in the way" - return something that triggers
                 the other collision object to move out of the way
                 '''
+                return False
                 raise NotImplementedError()
 
             leaf = strategy.get_and_remove_leaf()
