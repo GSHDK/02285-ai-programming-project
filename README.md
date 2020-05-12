@@ -23,5 +23,6 @@ Initial logic. Agents will always help others and discard own assignments
 * Goal assigner - box 4
 * Awaiting help - 5  
 * Solving help task - 6
+* Moving out of way for othr agent - 7
 
 

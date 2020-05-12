@@ -18,24 +18,8 @@ The goal of the assigner is from a given goal state
 
 class Replanner(metaclass=ABCMeta):
 
-    def __init__(self, world_state: 'State', list_of_agents):
+    def __init__(self, world_state: 'State'):
         self.world_state = None
-        self.agents = None
-
-
-    def resolve_conflict(self,)
-
-
-
-
-    def move_out_from_tunnelWell(self,agent,loc):
-
-        
-
-
-
-
-
 
     def replan_v1(self, illegal_movers, boxes_visible):
 

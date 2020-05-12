@@ -258,7 +258,7 @@ class SearchClient:
         #Define a list of dependencies in wells
         dependencies_wrong_order = []
 
-        for loc, well in dc(self.initial_state.wells).items():
+        #TODO: lav well og tunnels til set() 
             listo = []
             #makeWell(self, graph, coordinate,cost,goal_priority_list,well_id):
             self.makeWell(connection_graph,loc,well[1],listo,well[0])
