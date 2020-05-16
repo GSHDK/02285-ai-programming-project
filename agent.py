@@ -174,7 +174,7 @@ class search_agent(Agent):
 
     def search_position(self, world_state: 'State', agent_to):
 
-        if len(world_state.reverse_agent_dict()[self.agent_char]) != 2:
+        if len(world_state.reverse_agent_dict()[self.agent_char]) < 2:
             raise Exception("No values for agent ")
 
         self.world_state = State(world_state)
@@ -188,9 +188,6 @@ class search_agent(Agent):
                                                          agent_to=agent_to))
         else:
             strategy = self.strategy()
-        # In case there has been a previous search we need to clear the elements in the strategy object
-        strategy.reset_strategy()
-        strategy = self.strategy
         # In case there has been a previous search we need to clear the elements in the strategy object
         strategy.reset_strategy()
 

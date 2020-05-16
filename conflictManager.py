@@ -57,7 +57,6 @@ class ConflictManager:
 
             blackboard[0][box[0][2]+len_agents] = f'{row},{col}'
 
-        
         #Set coordinates after 1 action
         for agt in agents: 
             agt_id = agt.agent_internal_id
@@ -127,6 +126,8 @@ class ConflictManager:
     def blackboard_conflictSolver(self, agents:list):
 
         blackboard = self.create_blackboard(agents)
+        print(blackboard, file=sys.stderr, flush=True)
+
 
         len_agents = len(agents)
         

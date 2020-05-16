@@ -99,9 +99,9 @@ def main():
 
         for e in list_agents:
             if len(e.plan) > 0:
-                print(f'{e.plan[0]} {e.agent_char} before', file=sys.stderr, flush=True)
+                print(f'{e.plan[0]} {e.agent_char} before conflict length: {len(e.plan)} category:{e.plan_category}', file=sys.stderr, flush=True)
             else:
-                print(f'NoPlan for {e.agent_char} before', file=sys.stderr, flush=True)
+                print(f'NoPlan for {e.agent_char} before conflict length: {len(e.plan)} category:{e.plan_category}', file=sys.stderr, flush=True)
 
 
         # TODO: Check subgoal for agents - does it need to be updated
@@ -135,7 +135,12 @@ def main():
         # Give task to unassigned agents
         x.reassign_tasks()
         # Solve the new colflicts
-        conflict_manager.blackboard_conflictSolver(list_agents)   
+        conflict_manager.blackboard_conflictSolver(list_agents)
+        for e in list_agents:
+            if len(e.plan) > 0:
+                print(f'{e.plan[0]} {e.agent_char} after conflict ', file=sys.stderr, flush=True)
+            else:
+                print(f'NoPlan for {e.agent_char} after conflict', file=sys.stderr, flush=True)
     
 
         #TODO: Sync here with deleted agents and get their latest actions

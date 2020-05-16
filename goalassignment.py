@@ -83,6 +83,7 @@ class GoalAssigner(Assigner):
                 used_ids.add(box_tasks[element][1])
 
         agent_tasks = self.world_state.agents_goal
+        print(f'agent : {agent_tasks} \n box : {box_tasks}', flush=True , file=sys.stderr)
         return box_tasks, agent_tasks
 
     def reassign_tasks(self):
@@ -209,7 +210,8 @@ class GoalAssigner(Assigner):
         assignments_a = dict()
         for agent in potential:
             # Case where the agent has a move goal task, and has not solved it
-            if (agent.agent_char in self.agent_tasks) and (self.agent_tasks[agent.agent_char] not in solved_tasks):
+            print(self.agent_tasks[agent.agent_char], file=sys.stderr, flush=True)
+            if (agent.agent_char in self.agent_tasks) and (self.agent_tasks[agent.agent_char][0] not in solved_tasks):
                 assignments_a[self.agent_tasks[agent.agent_char][0]] = agent
 
             else:
@@ -229,7 +231,7 @@ class GoalAssigner(Assigner):
         :return: nothing
         '''
         for k, v in assignments.items():
-            v.plan_category = 4
+            v.plan_category = config.goal_assigner_box
             v.search_to_box(self.world_state, k[1], k[2])
 
     def _delegate_task_with_box(self, assignments):
@@ -239,12 +241,12 @@ class GoalAssigner(Assigner):
         :return: nothing
         '''
         for k, v in assignments.items():
-            v.plan_category = 4
+            v.plan_category = config.goal_assigner_box
             v.search_with_box(self.world_state)
 
     def _delegate_tasks_agent(self, assignments):
         for k, v in assignments.items():
-            v.plan_category = 3
+            v.plan_category = config.goal_assigner_location
             v.search_position(self.world_state, k)
 
     def _box_reversed(self):
