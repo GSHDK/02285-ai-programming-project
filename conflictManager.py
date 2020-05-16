@@ -244,7 +244,7 @@ class ConflictManager:
                                             helper_agt.pending_task_dict = {'world_state': self.world_state,
                                                                             'agent_collision_internal_id': None,
                                                                             'agent_collision_box': None,
-                                                                            'box_id' : self.world_state.boxes[blackboard[0][v_id]][2],
+                                                                            'box_id' : self.world_state.boxes[blackboard[0][v_id]][0][2],
                                                                             'coordinates': self.world_state.wells_reverse[self.world_state.wells[blackboard[0][v_id]][0]],
                                                                             'move_action_allowed': False
                                                                             }
@@ -334,7 +334,7 @@ class ConflictManager:
                                                                             'agent_collision_internal_id': None,
                                                                             'agent_collision_box': None,
                                                                             'box_id': self.world_state.boxes[
-                                                                                blackboard[0][v_id]][2],
+                                                                                blackboard[0][v_id]][0][2],
                                                                             'coordinates':
                                                                                 self.world_state.tunnels_reverse[
                                                                                     self.world_state.tunnels[
@@ -414,8 +414,7 @@ class ConflictManager:
                                                 helper_agt.pending_task_dict = {'world_state': self.world_state,
                                                                                 'agent_collision_internal_id': None,
                                                                                 'agent_collision_box': None,
-                                                                                'box_id': self.world_state.boxes[
-                                                                                    blackboard[0][v_id]][2],
+                                                                                'box_id': self.world_state.boxes[blackboard[0][v_id]][0][2],
                                                                                 'coordinates': self._calculate_plan_coords(agt,blackboard[0][idx]),
                                                                                 'move_action_allowed': False
                                                                                 }
@@ -566,11 +565,13 @@ class ConflictManager:
         coordinate_list = []
         row,col = [int(x) for x in current_loc.split(',')]
 
-        for action in agt.plan:
+        for action in agent.plan:
             
         
             if action.action_type is ActionType.NoOp:
-                    coordinate_list.append(f'{row},{col}')  
+                coordinate_list.append(f'{row},{col}')
+                new_agt_row = row
+                new_agt_col = col  
                     
             elif action.action_type is ActionType.Move:
                 agt_row, agt_col = row, col
@@ -621,7 +622,7 @@ class ConflictManager:
 
         min_dist = inf
         helper_agt = None
-        box_color = self.world_state.boxes[box_loc][0]
+        box_color = self.world_state.boxes[box_loc][0][0]
         box_loc_id=self.world_state.boxes[box_loc][0][2]
         
         # Temp creation to identify if an agents has this box assigned 
@@ -632,16 +633,21 @@ class ConflictManager:
         
         
         else:
+            
             # TODO: Overvej om det giver mening helper_agt kan være agenten selv som beder om hjælp 
             #Box was not assigned to  
+        
+            
+
             for agt in [agt for agt in agents if agt.agent_color==box_color]:
 
                 dist = utils.cityblock_distance(box_loc,blackboard[0][agt.agent_internal_id])
+                
 
                 # only get help from an agent that's not assigned
                 if  (dist < min_dist) and (agt.plan_category!=6):
                     min_dist = dist
-                    helter_agt = agt  
+                    helper_agt = agt  
             return helper_agt
 
 

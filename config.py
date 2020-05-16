@@ -10,7 +10,7 @@ agent_list_str=['0','1','2','3','4','5','6','7','8','9']
 
 max_replanning_depth=5
 
-while_counter = 20
+while_counter = 10
 
 no_task=1
 goal_assigner_location=2

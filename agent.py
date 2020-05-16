@@ -364,8 +364,7 @@ class search_agent(Agent):
                 break
             else:
                 if agt_loc not in coordinates and box_loc not in coordinates:
-                    raise NotImplementedError('The agent has found a location where it '
-                                              'can move to overwrite original plan and change state')
+                    
                     self._reset_plan()
                     self._convert_plan_to_action_list(leaf.extract_plan())
                     return True
