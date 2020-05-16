@@ -7,6 +7,10 @@ from collections import defaultdict
 from strategy import StrategyBestFirst,StrategyBFS
 from heuristic import heuristic_func, heuristic
 from utils import _get_agt_loc, _get_box_loc
+import config as _cfg
+import utils
+from action import Action, ActionType, Dir
+
 
 
 
@@ -15,6 +19,9 @@ class Agent(metaclass=ABCMeta):
 
     @abstractmethod
     def search_box(self, world_state: 'State', box_from, box_to) -> 'Action': raise NotImplementedError
+
+    @abstractmethod
+    def get_actions(self) -> 'Action': raise NotImplementedError
 
 '''
 Agents are given a goal by a central unit and plan how to achieve this goal themselves
@@ -38,8 +45,11 @@ class search_agent(Agent):
         self.current_box_id = None
         self.plan_category = int
         self.pending_help = False
-        # (helper_agt.agent_char, helper_agt.agent_internal_id)
+        self.pending_task_bool = False
+        self.helper_agt_requester_id = None
+        # tuple(helper_agt.agent_char, helper_agt.agent_internal_id)
         self.helper_id = None
+        self.pending_help_pending_plan = None
 
         # Used to track which jobs are currently assinged in goalassigner - 'goal_location'
         self.goal_job_id = None
@@ -307,6 +317,12 @@ class search_agent(Agent):
         #
         if box_id is None:
             move_action_allowed = True
+        
+        # test case
+        if (box_id is not None) and (utils.cityblock_distance(
+            utils._get_agt_loc(self.world_state,self.agent_char),
+            utils._get_box_loc(self.world_state, box_id))>1):
+            box_id=None
 
         self.world_state = State(world_state)
 
@@ -349,14 +365,15 @@ class search_agent(Agent):
             agt_loc = _get_agt_loc(leaf, self.agent_char)
             box_loc = _get_box_loc(leaf, self.current_box_id)
 
-            if box_id is None:
-                if agt_loc not in coordinates:
-                    self._convert_plan_to_action_list(leaf.extract_plan())
-                    break
+            if (box_id is None) and (agt_loc not in coordinates):
+                self._reset_plan()
+                self._convert_plan_to_action_list(leaf.extract_plan())
+                break
             else:
                 if agt_loc not in coordinates and box_loc not in coordinates:
                     raise NotImplementedError('The agent has found a location where it '
                                               'can move to overwrite original plan and change state')
+                    self._reset_plan()
                     self._convert_plan_to_action_list(leaf.extract_plan())
                     return True
 
@@ -366,15 +383,14 @@ class search_agent(Agent):
             strategy.explored.add(x)
 
             for child_state in leaf.get_children(
-                    self.agent_char, move_allowed=move_action_allowed):  # The list of expanded states is shuffled randomly; see state.py.
+                    self.agent_char, move_allowed=move_action_allowed):  # The list of expanded states is shuffled randomly;
+
                 # print("child box location value{}".format(child_state.boxes), file=sys.stderr, flush=True)
                 # print("set value{}".format(x.__hash__()), file=sys.stderr, flush=True)
                 # print("child value{}".format(child_state.__hash__()), file=sys.stderr, flush=True)
                 if not strategy.is_explored(child_state) and not strategy.in_frontier(child_state):
                     strategy.add_to_frontier(child_state)
             iterations += 1
-
-
 
     def set_search_strategy(self, heuristic, strategy):
         self.heuristic = heuristic
@@ -390,6 +406,33 @@ class search_agent(Agent):
                 self.world_state.sub_goal_box = None
     def _reset_plan(self):
         self.plan = deque()
+    
+    def _reset_from_help(self):
+        self.current_box_id = None
+        self.plan_category = _cfg.no_task
+        self.pending_help = False
+        self.pending_task_bool = False
+        self.helper_agt_requester_id = None
+        self.helper_id = None
+        self.pending_help_pending_plan = None
+    
+    def _resume_plan(self):
+        if self.current_box_id is not None:
+            self.plan_category = _cfg.goal_assigner_box
+        else:
+            self.pending_help_pending_plan = _cfg.goal_assigner_location
+        self.pending_help = False
+        self.pending_task_bool = False
+        self.helper_agt_requester_id = None
+        # tuple(helper_agt.agent_char, helper_agt.agent_internal_id)
+        self.helper_id = None
+        self.pending_help_pending_plan = None
+
+    def get_next_action(self):
+        if len(self.plan)<1:
+            return Action(ActionType.NoOp, None, None)
+        else:
+            return self.plan.popleft()
 
 
     def __eq__(self, other):

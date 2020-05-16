@@ -133,3 +133,9 @@ dmypy.json
 #localfiles
 TEST.py
 Test-de-test.py
+
+# Visual studio
+.vscode
+/.idea
+
+

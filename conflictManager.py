@@ -33,7 +33,6 @@ class ConflictManager:
 
         self.replanner = Replanner()
 
-
         #self._create_blackboard()
        
 
@@ -126,7 +125,7 @@ class ConflictManager:
         return blackboard
         
 
-    def _blackboard_conflictSolver(self, agents:list):
+    def blackboard_conflictSolver(self, agents:list):
 
         blackboard = self.create_blackboard(agents)
 
@@ -216,15 +215,18 @@ class ConflictManager:
                                             helper_agt.plan_category = _cfg.solving_help_task
                                             helper_agt._reset_plan()
                                             #Search to location where our current agent/box is located
-                                            helper_agt.search_to_box(self.world_state, blackboard[0][idx],box_id)
+                                            helper_agt.search_to_box(self.world_state, blackboard[0][v_id],v_id)
                                             
-                                            #Search out of well with the box 
-                                            helper_agt.search_conflict_bfs_not_in_list(world_state = self.world_state, \
-                                                        agent_collision_internal_id = None, \
-                                                            agent_collision_box = None, \
-                                                                box_id = self.world_state.boxes[blackboard[0][v_id]][2], \
-                                                                    coordinates = self.world_state.wells_reverse[self.world_state.wells[blackboard[0][v_id]][0]],\
-                                                                        move_action_allowed = False)
+                                            #PUSH to agent: Search out of well with the box 
+                                            helper_agt.pending_task_bool = True
+                                            helper_agt.pending_task_func = helper_agt.search_conflict_bfs_not_in_list
+                                            helper_agt.pending_task_dict = {'world_state': self.world_state,
+                                                                            'agent_collision_internal_id': None,
+                                                                            'agent_collision_box': None,
+                                                                            'box_id' : self.world_state.boxes[blackboard[0][v_id]][2],
+                                                                            'coordinates': self.world_state.wells_reverse[self.world_state.wells[blackboard[0][v_id]][0]]
+                                                                            'move_action_allowed': False
+                                                                            }
 
 
                                             #Current agent now has to plan how to get out from well
@@ -294,24 +296,34 @@ class ConflictManager:
                                         if helper_agt is None:
                                             agt.plan.appendleft(Action(ActionType.NoOp, None, None))
                                         else:
-                                            #One agent has bee found as helper.
+                                            #One agent has been found as helper.
 
                                             #Helper agent now computes route to box, and then how to get the box out of the well
                                             helper_agt.plan_category = _cfg.solving_help_task
                                             helper_agt._reset_plan()
                                             #Search to location where our current agent/box is located
-                                            helper_agt.search_to_box(self.world_state, blackboard[0][idx],box_id)
+                                            helper_agt.search_to_box(self.world_state, blackboard[0][v_id],v_id)
                                             
-                                            #Search out of well with the box 
-                                            helper_agt.search_conflict_bfs_not_in_list(world_state = self.world_state, \
-                                                        agent_collision_internal_id = None, \
-                                                            agent_collision_box = None, \
-                                                                box_id = self.world_state.boxes[blackboard[0][v_id]][2], \
-                                                                    coordinates = self.world_state.tunnels_reverse[self.world_state.tunnels[blackboard[0][v_id]][0]],\
-                                                                        move_action_allowed = False)
+                                            #Search out of tunnel with the box 
+                                            #TODO: PUSH TO AGENT
+                                                                                        # 
+                                            helper_agt.pending_task_bool = True
+                                            helper_agt.pending_task_func = helper_agt.search_conflict_bfs_not_in_list
+                                            helper_agt.pending_task_dict = {'world_state': self.world_state,
+                                                                            'agent_collision_internal_id': None,
+                                                                            'agent_collision_box': None,
+                                                                            'box_id': self.world_state.boxes[
+                                                                                blackboard[0][v_id]][2],
+                                                                            'coordinates':
+                                                                                self.world_state.tunnels_reverse[
+                                                                                    self.world_state.tunnels[
+                                                                                        blackboard[0][v_id]][0]]
+                                                                            'move_action_allowed': False
+                                                                            }
 
 
                                             #Current agent now has to plan how to get out from well
+                                            
                                             agt.pending_help = True
                                             agt.helper_id = (helper_agt.agent_char, helper_agt.agent_internal_id)
                                             agt.plan_category = _cfg.awaiting_help   
@@ -338,78 +350,145 @@ class ConflictManager:
                                     #TODO: Vær sikker på at det virker så vi både kan sende en agent med og uden en boks
                                     able_to_move = self.replanner.replan_v1(self.world_state,[agt],box_id,[blackboard[0][v_id]])
                                     
+                                    # TODO: Change states and categories to the appropiate values
                                     if not able_to_move:
                                         if v_id < len_agents:
+                                            # Ask col agent to move out of plan
+                                            bool_val = agents[v_id].search_conflict_bfs_not_in_list(world_state = self.world_state, \
+                                                        agent_collision_internal_id = agt.agent_internal_id, \
+                                                            agent_collision_box = box_id, \
+                                                                box_id = None, \
+                                                                    coordinates = self._calculate_plan_coords(agt,blackboard[0][idx]))
+                                            if not bool_val:
+                                                raise NotImplementedError(f'Deadlock between agents, idx: {idx} and v_id: {v_id}')
+                                                # Agent cannot move out of plan
+                                            else:
+                                                #If agents was able to move our of idx's plan, give 1 NoOp so we dont collide 
+                                                agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                 
 
-                                            if box_id is not None:
-                                                #Ask for agent to move out of idx's plan:
-                                                agents[v_id].search_conflict_bfs_not_in_list(world_state = self.world_state, \
-                                                            agent_collision_internal_id = idx, \
-                                                                agent_collision_box = box_id, \
-                                                                    box_id = self.world_state.boxes[blackboard[0][v_id]][2], \
-                                                                        coordinates = self._calculate_plan_coords(agt,blackboard[0][idx]))
                                         else:
-                                            #Ask to have box removed from idx's plan
+                                            # Ask to have box removed from idx's plan if not assigned
+                                            #idx hits a box, ask for help to move this box:
+                                            helper_agt = self._determine_helper_agent(blackboard[0][v_id],blackboard,agents)
+                                            
+                                            #If no agent was found, just wait until someone becomes available
+                                            if helper_agt is None:
+                                                agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                            else:
+                                                #One agent has bee found as helper.
+
+                                                #Helper agent now computes route to box, and then how to get the box out of the well
+                                                helper_agt.plan_category = _cfg.solving_help_task
+                                                helper_agt._reset_plan()
+
+                                                #TODO: søg på et andet punkt tæt på boksen
+                                                #Search to location where our current agent/box is located
+                                                helper_agt.search_to_box(self.world_state, blackboard[0][v_id],v_id)
+                                                
+                                                #Push next job to agent: Search out of well with the box
+                                                helper_agt.pending_task_bool = True
+                                                helper_agt.helper_agt_requester_id=agt.agent_char
+                                                helper_agt.pending_task_func = helper_agt.search_conflict_bfs_not_in_list
+                                                helper_agt.pending_task_dict = {'world_state': self.world_state,
+                                                                                'agent_collision_internal_id': None,
+                                                                                'agent_collision_box': None,
+                                                                                'box_id': self.world_state.boxes[
+                                                                                    blackboard[0][v_id]][2],
+                                                                                'coordinates': self._calculate_plan_coords(agt,blackboard[0][idx])
+                                                                                'move_action_allowed': False
+                                                                                }
 
 
-
-
-
-
-                                    
-                                    
-
-
-
-
-                                    if idx < len_agents:
-
-
-
-
-                                    '''
-                                    if idx < len_agents:
-                                        agents[idx].REPLAN AROUND
-
-                                    else:
-                                        box_id = idx-len_agents
-                                        agt  = [agt for agt in agents if agt.sub_goal_box == box_id][0]
-                                        agt.REPLAN AROUND
-                                    '''
+                                                #Current agent now gets NoOps in main until helping task is solved
+                                                #TODO: I main loop, fang hvis denne variable er true så skub NoOps. 
+                                                #TODO: Når agt = helper_id har plan.len = 0, så skal agt.pending_help_pendng_plan = False 
+                                                agt.pending_help_pending_plan = True
+                                                agt.helper_id = (helper_agt.agent_char, helper_agt.agent_internal_id)
+                                                agt.plan_category = _cfg.awaiting_help   
+                                                                                   
                             else:
                                 #NOT STATIONARY
-
-                                '''
-                                TODO: USE JOB Importance to determine who to move 
-                                '''
-
                                 #Check if opposite directions of movement:
                                 if f'{row_0_idx},{col_0_idx}' == f'{row_1_v_id},{col_1_v_id}':
-                                    '''
-                                    EVENTUELT: 
-                                        if in tunnel/well: 
-                                            løs anderledes
+
+                                    if v_id < len_agents:
+                                        #Two agents - find out who has the highest priority 
+                                        if agt.plan_category >= agents[v_id].plan_category:
+                                            able_to_move = self.replanner.replan_v1(self.world_state,agtents[v_id],None,[blackboard[0][idx]])
+
+                                            if not able_to_move:
+                                                bool_val = agents[v_id].search_conflict_bfs_not_in_list(world_state = self.world_state, \
+                                                        agent_collision_internal_id = agt.agent_internal_id, \
+                                                            agent_collision_box = box_id, \
+                                                                box_id = agents[v_id].agent_internal_id, \
+                                                                    coordinates = self._calculate_plan_coords(agt,blackboard[0][idx]))
+                                                agents[v_id].plan.appendleft(Action(ActionType.NoOp, None, None))
+
+                                                if not bool_val:
+                                                    raise NotImplementedError(f'Agent {agents[v_id].agentagent_char} cannot move around or get away from {idx}')
+
+                                            agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                            agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+
+                                        else:
+                                            able_to_move = self.replanner.replan_v1(self.world_state,agt,None,[blackboard[0][v_id]])
+
+                                            if not able_to_move:
+                                                bool_val = agt.search_conflict_bfs_not_in_list(world_state = self.world_state, \
+                                                        agent_collision_internal_id = agents[v_id].agent_internal_id, \
+                                                            agent_collision_box = agents[v_id].current_box_id, \
+                                                                box_id = agt.current_box_id, \
+                                                                    coordinates = self._calculate_plan_coords(agents[v_id],blackboard[0][v_id]))
+                                                agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+
+                                                if not bool_val:
+                                                    raise NotImplementedError(f'Agent {agents[v_id].agentagent_char} cannot move around or get away from {idx}')
+
+                                            agents[v_id].plan.appendleft(Action(ActionType.NoOp, None, None))
+                                            agents[v_id].plan.appendleft(Action(ActionType.NoOp, None, None))
                                     
-                                    1 søger væk fra nr2's plan
-                                    nr2 fortsætter sin gamle plan
-                                    
-                                    '''
+                                    else:
+                                        #If moving box, find relevant agent
+                                        box_agt = [agt for agt in agents if agt.sub_goal_box == v_id][0]
+                                        #Two agents - find out who has the highest priority 
+                                        if agt.plan_category >= box_agt.plan_category:
+                                            able_to_move = self.replanner.replan_v1(self.world_state,box_agt,None,[blackboard[0][idx]])
+
+                                            if not able_to_move:
+                                                bool_val = box_agt.search_conflict_bfs_not_in_list(world_state = self.world_state, \
+                                                        agent_collision_internal_id = agt.agent_internal_id, \
+                                                            agent_collision_box = agt.current_box_id, \
+                                                                box_id = agents[v_id].current_box_id, \
+                                                                    coordinates = self._calculate_plan_coords(agt,blackboard[0][idx]))
+                                                box_agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+
+                                                if not bool_val:
+                                                    raise NotImplementedError(f'Agent {box_agt.agentagent_char} cannot move around or get away from {idx}')
+
+                                            agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                            agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+
+                                        else:
+                                            able_to_move = self.replanner.replan_v1(self.world_state,agt,None,[blackboard[0][v_id]])
+
+                                            if not able_to_move:
+                                                bool_val = agt.search_conflict_bfs_not_in_list(world_state = self.world_state, \
+                                                        agent_collision_internal_id = box_agt.agent_internal_id, \
+                                                            agent_collision_box = v_id, \
+                                                                box_id = agt.current_box_id, \
+                                                                    coordinates = self._calculate_plan_coords(box_agt,blackboard[0][box_agt.agent_internal_id]))
+                                                agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+
+                                                if not bool_val:
+                                                    raise NotImplementedError(f'Agent {box_agt.agentagent_char} cannot move around or get away from {idx}')
+
+                                            box_agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                            box_agt.plan.appendleft(Action(ActionType.NoOp, None, None))
 
                                 else:
-                                    '''
-                                    agt.plan.push(NoOp)
-                                    '''
-
-                                #if blackboard[1][idx] not in Blackboard[2]:
-                                #    '''
-                                #    agt.plan.push(NoOp)
-                                #    agt.plan.push(NoOp) 
-                                #    '''
-                                #else:
-                                #    #Bude ikke kunne ske?
-                                #    '''
-                                #    agt.REPLAN UDENOM
-                                #    '''
+                                    #Wait for prereq location to be free
+                                    agt.plan.appendleft(Action(ActionType.NoOp, None, None))
                                
         #Update blackboard after new actions are pushed that fixes prereqs
         blackboard = self.blackboard_update(agents)
@@ -422,26 +501,39 @@ class ConflictManager:
         
         for loc,v in current_state.items():
             if len(v) > 1:
+                
                 '''
                 For collisions we prioritize the agent with the most important job
                 '''
+                #Find all agents from idx's:
 
-                #In region of interest?
-                loc_row,loc_col = blackboard[1][loc].split(',')
+                agt_list = []
+                for idc in v:
+                    if idc < len_agents:
+                        agt_list.append(agents[idc])
+                    else:
+                        box_agt = [agt for agt in agents if agt.sub_goal_box == idc][0]
+                        agt_list.append(box_agt)
+                
+                prez = -1
+                prez_category = -10
+                for p_id, ag in enumerate(agt_list):
+                    if ag.plan_category > prez_categoy:
+                        prez_category = ag.plan_category
+                        prez = p_id
 
-                if f'{loc_row},{loc_col}' in self.world_state.wells:
-                    pass
-                elif f'{loc_row},{loc_col}' in self.world_state.tunnel:
-                    pass
-                elif f'{loc_row},{loc_col}' in self.world_state.juntions:
-                    pass
-                else:
+
+                for idc, ag in enumerate(agt_list):
+                    if idc != p_id:
+                        ag.plan.appendleft(Action(ActionType.NoOp, None, None))
+
+
+                
+                #if (f'{loc_row},{loc_col}' in self.world_state.wells) or (f'{loc_row},{loc_col}' in self.world_state.tunnel):
+                #else:
                     #In open space 
-                    pass
-                    
-
-
-
+                       
+          
                 
     def _calculate_plan_coords(self,agent,current_loc):
 

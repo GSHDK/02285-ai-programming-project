@@ -23,6 +23,7 @@ class Replanner(metaclass=ABCMeta):
         self.world_state = None
 
     def replan_v1(self, world_state: 'State', agent, assigned_box: int, blocked_location: list):
+        assigned_box=agent.current_box_id
         _pop = [y for y, x in self.world_state.boxes.items() if (y not in blocked_location) or (x[0][2]==assigned_box)]
         agent_dict = self.world_state.reverse_agent_dict()
 

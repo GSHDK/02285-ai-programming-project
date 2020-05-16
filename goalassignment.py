@@ -133,16 +133,31 @@ class GoalAssigner(Assigner):
         assignments_with_box = dict()
         for element in self.agents:
             if len(element.plan) == 0:
+                # if the agent is performing a help task
+                if (element.plan_category == config.solving_help_task) and (element.pending_task_bool):
+                    # Update the world state
+                    element.pending_task_dict['world_state'] = self.world_state
+                    element.pending_task_func(**element.pending_task_dict)
+                    element.pending_task_bool=False
+                    continue
+                
+                # reset agent to be free
                 if element.goal_job_id not in current_execution:
-                    element.current_box_id = None
-                    element.goal_job_id = None
-                elif element.goal_job_id==config.awaiting_help:
-                    if element.helper_id
-                    element.plan.appendleft(Action(ActionType.NoOp, None, None))
-                    pass
+                    element._reset_from_help()
+                elif element.goal_job_id == config.awaiting_help:
+                    for _ele in self.agents:
+                        # make _ele it's helper
+                        if _ele.agent_char ==element.helper_id[0]:
+                            break
+                    # Is it still solving the help task related to this agent
+                    if _ele.helper_agt_requester_id==element.agent_char:
+                        element.plan.appendleft(Action(ActionType.NoOp, None, None))
+
+                    if element.helper_id[0]:
+                        element.plan.appendleft(Action(ActionType.NoOp, None, None))
+                        pass
                 else:
-                    if element.goal_job_id != config.awaiting_help
-                    config.:
+                    if element.goal_job_id != config.awaiting_help:
                         raise Exception('Goalassigner found non box task l184')
                     assignments_with_box[(element.goal_job_id, box_reversed[element.current_box_id])] = element
                     # TODO: implement search with box - and change other method to search to box

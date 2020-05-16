@@ -44,3 +44,23 @@ def create_dijkstras_map(state_: State):
             iterations += 1
 
     return result_dict
+
+def convert_unassigned_colors_to_walls(world_state:'State'):
+    agent_ids = set(world_state.reverse_agent_dict().keys())
+    colors=set()
+    for k, v in world_state.colors_reverse.items():
+        elements_color=set(v)
+        # if there are no elements of agent_ids not in elements_color
+        if (agent_ids.difference(elements_color))==len(agent_ids):
+            colors.add(k)
+            # convert all boxes to walls
+
+    to_be_popped=list()
+    for location, values in world_state.boxes.items():
+        if values[0] in colors:
+            to_be_popped.append(location)
+            world_state.walls[location] = True
+    
+    while len(to_be_popped)>0:
+        # Remove the boxes that cannot be moved
+        world_state.boxes.pop(to_be_popped.pop())

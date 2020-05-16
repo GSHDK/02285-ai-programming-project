@@ -6,6 +6,7 @@ import config
 from collections import defaultdict, deque
 from itertools import chain
 from copy import deepcopy as dc
+import preprocessing
 
 from state import State
 
@@ -16,6 +17,7 @@ class SearchClient:
         self.max_row = -1
         self.max_col = -1
         self.goal_dependencies = {}
+        self.del_agents_ids = []
         
 
         try:
@@ -121,8 +123,8 @@ class SearchClient:
                         sys.exit(1)
                 row += 1
 
-            # TODO: TESTING - dosent work currently
             self.levelDesigner()
+            preprocessing.convert_unassigned_colors_to_walls(self.initial_state)
 
             print(f'Done with loading data', file=sys.stderr, flush=True)
 
@@ -180,7 +182,7 @@ class SearchClient:
             else:
                 relevant_level.append(subgraph)
         
-        #Flatten list of coordinats to remove
+        #Flatten list of coordinates to remove
         all_remove = list(chain.from_iterable(to_remove))
 
         #print('to_remove', file=sys.stderr, flush=True)
@@ -192,6 +194,7 @@ class SearchClient:
 
         #Iterate over agents and boxes in initial state to remove any located in the irrelevant parts of the level
         
+ 
         '''
         Slet agenten - husk hvem der slettes så vi kan sende NoOps i main
         
@@ -199,7 +202,9 @@ class SearchClient:
         #TODO: HUSK at smide ud til main.py hvilke agenter der er blevet slettet, så vi kan sende en NoOp automatisk 
 
         del_agents = [key for key in self.initial_state.agents.keys() if key in all_remove]
+
         for loc in del_agents:
+            self.del_agents_ids.append(self.initial_state.agents[loc][1])
             del self.initial_state.agents[loc]
         
         a_inter_id = 0
@@ -257,13 +262,12 @@ class SearchClient:
 
         #Define a list of dependencies in wells
         dependencies_wrong_order = []
-
+        listo=[]
         #TODO: lav well og tunnels til set() 
-            listo = []
-            #makeWell(self, graph, coordinate,cost,goal_priority_list,well_id):
-            self.makeWell(connection_graph,loc,well[1],listo,well[0])
-            if len(listo)> 0:
-                dependencies_wrong_order.append(listo)
+        #makeWell(self, graph, coordinate,cost,goal_priority_list,well_id):
+        self.makeWell(connection_graph,loc,well[1],listo,well[0])
+        if len(listo)> 0:
+            dependencies_wrong_order.append(listo)
 
         #Go through all tunnels, and assign them id's
         tunnel_id = well_id+1
