@@ -203,14 +203,11 @@ class Replanner(metaclass=ABCMeta):
         # self.color_goals = self.create_color_goals()
 
 def merge_agent_plans(agent, temp_replan, action_counter):
-    print("________", file=sys.stderr, flush=True)
-    print(agent.plan, file=sys.stderr, flush=True)
     while action_counter > 0:
         agent.plan.popleft()
         action_counter -= 1
     # Append new plan
     while len(temp_replan) > 0:
         agent.plan.appendleft(temp_replan.pop())
-    print(agent.plan, file=sys.stderr, flush=True)
 
 

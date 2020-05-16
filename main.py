@@ -99,15 +99,15 @@ def main():
 
         for e in list_agents:
             if len(e.plan) > 0:
+                # print(f'{e.agent_char} plan:{e.plan}', flush=True, file=sys.stderr)
                 print(f'{e.plan[0]} {e.agent_char} before conflict length: {len(e.plan)} category:{e.plan_category}', file=sys.stderr, flush=True)
             else:
                 print(f'NoPlan for {e.agent_char} before conflict length: {len(e.plan)} category:{e.plan_category}', file=sys.stderr, flush=True)
 
-
         # TODO: Check subgoal for agents - does it need to be updated
 
         # Keeps it from getting out of hand while testing
-        if counter == 10:
+        if counter == 5:
             break
 
         

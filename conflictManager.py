@@ -453,7 +453,7 @@ class ConflictManager:
                                     
                                     else:
                                         #If moving box, find relevant agent
-                                        box_agt = [agt for agt in agents if agt.sub_goal_box == v_id][0]
+                                        box_agt = [agt for agt in agents if agt.current_box_id == v_id][0]
                                         #Two agents - find out who has the highest priority 
                                         if agt.plan_category >= box_agt.plan_category:
                                             able_to_move = self.replanner.replan_v1(self.world_state,box_agt,None,[blackboard[0][idx]])
@@ -515,7 +515,11 @@ class ConflictManager:
                     if idc < len_agents:
                         agt_list.append(agents[idc])
                     else:
-                        box_agt = [agt for agt in agents if agt.sub_goal_box == idc][0]
+                        _agt_list = [agt for agt in agents if agt.current_box_id == box_id]
+                        if len(_agt_list) > 0:
+                            box_agt = _agt_list[0]
+                        else:
+                            continue
                         agt_list.append(box_agt)
                 
                 prez = -1

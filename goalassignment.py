@@ -83,7 +83,8 @@ class GoalAssigner(Assigner):
                 used_ids.add(box_tasks[element][1])
 
         agent_tasks = self.world_state.agents_goal
-        print(f'agent : {agent_tasks} \n box : {box_tasks}', flush=True , file=sys.stderr)
+        # TODO: print
+        print(f'GOAL TASKS:\n agent : {agent_tasks} \n box : {box_tasks}', flush=True , file=sys.stderr)
         return box_tasks, agent_tasks
 
     def reassign_tasks(self):
@@ -144,7 +145,7 @@ class GoalAssigner(Assigner):
                 elif element.goal_job_id == config.awaiting_help:
                     for _ele in self.agents:
                         # make _ele it's helper
-                        if _ele.agent_char ==element.helper_id[0]:
+                        if _ele.agent_char == element.helper_id[0]:
                             break
                     # Is it still solving the help task related to this agent
                     if _ele.helper_agt_requester_id==element.agent_char:
@@ -154,11 +155,10 @@ class GoalAssigner(Assigner):
                         element.plan.appendleft(Action(ActionType.NoOp, None, None))
                         pass
                 else:
-                    if element.goal_job_id != config.awaiting_help:
-                        raise Exception('Goalassigner found non box task l184')
-                    assignments_with_box[(element.goal_job_id, box_reversed[element.current_box_id])] = element
-                    # TODO: implement search with box - and change other method to search to box
-                    continue
+                    if (element.goal_job_id is not None) and (element.goal_job_id not in solved_tasks):
+                        print(box_reversed[element.current_box_id], file=sys.stderr, flush=True)
+                        assignments_with_box[element.goal_job_id] = element
+                        continue
 
 
                 # We first get the goal_locations still needing boxes
@@ -177,9 +177,11 @@ class GoalAssigner(Assigner):
                     # Find char of this goal location and asses if we can move it
                     # make sure task is not assigned
                     # make sure connected_comp is the same
+
                     if (self.world_state.colors[v[0]] == element.agent_color) \
                             and (k not in used_ids)\
                             and (element.connected_component_id == box_reversed[v[1]][1]):
+                        # TODO: Print
                         # Gives current distance from agent to box
                         temp_dist = cityblock_distance(self.world_state.reverse_boxes_dict()[v[1]][0],
                                                        self.world_state.reverse_agent_dict()[element.agent_char][1])
@@ -210,7 +212,6 @@ class GoalAssigner(Assigner):
         assignments_a = dict()
         for agent in potential:
             # Case where the agent has a move goal task, and has not solved it
-            print(self.agent_tasks[agent.agent_char], file=sys.stderr, flush=True)
             if (agent.agent_char in self.agent_tasks) and (self.agent_tasks[agent.agent_char][0] not in solved_tasks):
                 assignments_a[self.agent_tasks[agent.agent_char][0]] = agent
 
@@ -233,6 +234,9 @@ class GoalAssigner(Assigner):
         for k, v in assignments.items():
             v.plan_category = config.goal_assigner_box
             v.search_to_box(self.world_state, k[1], k[2])
+            # Assign appropiate values
+            v.goal_job_id = k[0]
+            print(v.plan, file=sys.stderr , flush=True)
 
     def _delegate_task_with_box(self, assignments):
         '''

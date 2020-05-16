@@ -38,7 +38,7 @@ class search_agent(Agent):
         # Conflict only interacts with this one
         self.plan = deque()
         self.current_box_id = None
-        self.plan_category = int
+        self.plan_category = -1
         self.pending_help = False
         self.pending_task_bool = False
         self.helper_agt_requester_id = None

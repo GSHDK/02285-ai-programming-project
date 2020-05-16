@@ -52,7 +52,7 @@ def h_goalassigner_to_box(self: 'Heuristic', state: 'State', dist_function) -> '
     agent_location = _get_agt_loc(state, self.data['agent_char'])
     return dist_function(agent_location, self.data['box_loc'])
 
-def h_goalassigner_with_box(self: 'Heuristic', state: 'State') -> 'int':
+def h_goalassigner_with_box(self: 'Heuristic', state: 'State', dist_functio) -> 'int':
     # CALCULATE THE VALUES FROM LOCAL VARIABLE IN STATE coordinate_agent: str, coordinate_box: str, goal_agent: str, goal_box: str
 
     if 'box_id' not in self.data and 'agent_char' not in self.data and 'goal_loc' not in self.data:
