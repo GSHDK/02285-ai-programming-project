@@ -379,7 +379,7 @@ class ConflictManager:
                                                         agent_collision_internal_id = agt.agent_internal_id, \
                                                             agent_collision_box = box_id, \
                                                                 box_id = None, \
-                                                                    coordinates = self._calculate_plan_coords(agt,blackboard[0][idx]))
+                                                                    coordinates = self._calculate_plan_coords(agt,blackboard[0][agt.agent_internal_id]))
                                             if not bool_val:
                                                 raise NotImplementedError(f'Deadlock between agents, idx: {idx} and v_id: {v_id}')
                                                 # Agent cannot move out of plan
@@ -415,7 +415,7 @@ class ConflictManager:
                                                                                 'agent_collision_internal_id': None,
                                                                                 'agent_collision_box': None,
                                                                                 'box_id': self.world_state.boxes[blackboard[0][v_id]][0][2],
-                                                                                'coordinates': self._calculate_plan_coords(agt,blackboard[0][idx]),
+                                                                                'coordinates': self._calculate_plan_coords(agt,blackboard[0][agt.agent_internal_id]),
                                                                                 'move_action_allowed': False
                                                                                 }
 
@@ -442,7 +442,7 @@ class ConflictManager:
                                                         agent_collision_internal_id = agt.agent_internal_id, \
                                                             agent_collision_box = box_id, \
                                                                 box_id = agents[v_id].agent_internal_id, \
-                                                                    coordinates = self._calculate_plan_coords(agt,blackboard[0][idx]))
+                                                                    coordinates = self._calculate_plan_coords(agt,blackboard[0][agt.agent_internal_id]))
                                                 agents[v_id].plan.appendleft(Action(ActionType.NoOp, None, None))
 
                                                 if not bool_val:
@@ -480,7 +480,7 @@ class ConflictManager:
                                                         agent_collision_internal_id = agt.agent_internal_id, \
                                                             agent_collision_box = agt.current_box_id, \
                                                                 box_id = agents[v_id].current_box_id, \
-                                                                    coordinates = self._calculate_plan_coords(agt,blackboard[0][idx]))
+                                                                    coordinates = self._calculate_plan_coords(agt,blackboard[0][agt.agent_internal_id]))
                                                 box_agt.plan.appendleft(Action(ActionType.NoOp, None, None))
 
                                                 if not bool_val:
@@ -564,10 +564,9 @@ class ConflictManager:
         #TODO: Test denne her
         coordinate_list = []
         row,col = [int(x) for x in current_loc.split(',')]
-
+        
         for action in agent.plan:
             
-        
             if action.action_type is ActionType.NoOp:
                 coordinate_list.append(f'{row},{col}')
                 new_agt_row = row
@@ -592,8 +591,6 @@ class ConflictManager:
                 new_box_row = box_row + action.box_dir.d_row
                 new_box_col = box_col + action.box_dir.d_col
 
-
-
                 coordinate_list.append(f'{new_agt_row},{new_agt_col}')
                 coordinate_list.append(f'{new_box_row},{new_box_col}')
 
@@ -614,6 +611,7 @@ class ConflictManager:
                 coordinate_list.append(f'{new_box_row},{new_box_col}')
             #Update agent current location
             row,col = new_agt_row,new_agt_col
+        print(f'coordlist: {set(coordinate_list)}',file=sys.stderr,flush=True)
         return(set(coordinate_list))
 
 
