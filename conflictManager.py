@@ -129,7 +129,13 @@ class ConflictManager:
         len_agents = len(agents)
         
         #Check prereqs
+
+        #List to skips idx's if their prereq conflict has already been solve
+        skippo = []
+        
         for idx, obj in enumerate(blackboard[1]):
+            if idx in skippo:
+                continue
             
             prereq_state = defaultdict(list)
 
@@ -142,6 +148,7 @@ class ConflictManager:
                 box_id = idx - len_agents
                 _agt_list = [agt for agt in agents if agt.current_box_id == box_id]
                 if len(_agt_list)>0:
+                    print(f'idx: {idx}, _agt_list{_agt_list[0].agent_char}',file=sys.stderr,flush=True)
                     agt = _agt_list[0]
                 else:
                     continue
@@ -153,12 +160,12 @@ class ConflictManager:
                 if p_idx != idx:
                     prereq_state[p_loc].append(p_idx)
 
-
+            print(f'idx: {idx}, preqeq state{prereq_state}',file=sys.stderr,flush=True)
             for _,v in prereq_state.items():
                 #If multiple indexes hash to same value, then we have a conflict
                 if len(v) > 1:
                     
-                    #TODO: FIX this shit
+                    
                     skip = False
                     #If idx is box, make sure we don't fail on a pull move:
                     if idx >= len_agents:
@@ -168,8 +175,9 @@ class ConflictManager:
                     else:
                         #Fix push move for agents
                         for v_check in v:
-                            #if v_check-len_agents == agt.current_box_id:
-                            if v_check == agt.current_box_id-len_agents:    
+                            if v_check-len_agents == agt.current_box_id:
+                            #if v_check == agt.current_box_id-len_agents:    
+                                print(f'skipping in idx {idx},vcheck {v_check}',file=sys.stderr,flush=True)
                                 skip = True
                     
 
@@ -182,7 +190,7 @@ class ConflictManager:
                             row_0_v_id,col_0_v_id  = [int(x) for x in blackboard[0][v_id].split(',')]
                             row_1_v_id,col_1_v_id  = [int(x) for x in blackboard[1][v_id].split(',')]
                             row_0_idx,col_0_idx = [int(x) for x in blackboard[0][idx].split(',')]
-                            row_1_idx,col_1_idx = [int(x) for x in blackboard[1][idx].split(',')]
+                            #row_1_idx,col_1_idx = [int(x) for x in blackboard[1][idx].split(',')]
 
 
                             
@@ -369,7 +377,24 @@ class ConflictManager:
                                 else:
                                     #Try to move around. If no plan around object was found in X steps, we ask for the object to be moved. 
                                     #TODO: Vær sikker på at det virker så vi både kan sende en agent med og uden en boks
-                                    able_to_move = self.replanner.replan_v1(self.world_state,agt ,box_id,[blackboard[0][v_id]])
+
+                                    #Find out if v-id os box or agent, and if collision agent has a box
+                                    if v_id < len_agents:
+                                        if agents[v_id].current_box_id is not None:
+                                            blocked = [blackboard[0][v_id],blackboard[0][agents[v_id].current_box_id + len_agents]]
+                                        else:
+                                            blocked = [blackboard[0][v_id]]
+                                    else:
+                                        b_agt_list = [agt for agt in agents if agt.current_box_id == v_id-len_agents]
+                                        if len(b_agt_list) > 0:
+                                            b_agt_loc = blackboard[0][_agt_list[0].agent_internal_id]
+                                            blocked = [blackboard[0][v_id],b_agt_loc]
+                                        else:
+                                            blocked = [blackboard[0][v_id]]
+
+
+
+                                    able_to_move = self.replanner.replan_v1(self.world_state,agt ,box_id,blocked)
                                     
                                     # TODO: Change states and categories to the appropiate values
                                     if not able_to_move:
@@ -391,7 +416,10 @@ class ConflictManager:
                                         else:
                                             # Ask to have box removed from idx's plan if not assigned
                                             #idx hits a box, ask for help to move this box:
+                                            print(f'v_id: {v_id}, blackboard[0][v_id] : {blackboard[0][v_id]}',file=sys.stderr,flush=True)
                                             helper_agt = self._determine_helper_agent(blackboard[0][v_id],blackboard,agents)
+
+                                            print(f'h_id {helper_agt.agent_char}',file=sys.stderr,flush=True)
                                             
                                             #If no agent was found, just wait until someone becomes available
                                             if helper_agt is None:
@@ -405,7 +433,7 @@ class ConflictManager:
 
                                                 #TODO: søg på et andet punkt tæt på boksen
                                                 #Search to location where our current agent/box is located
-                                                helper_agt.search_to_box(self.world_state, blackboard[0][v_id],v_id)
+                                                helper_agt.search_to_box(self.world_state, blackboard[0][v_id],v_id-len_agents)
                                                 
                                                 #Push next job to agent: Search out of well with the box
                                                 helper_agt.pending_task_bool = True
@@ -418,7 +446,9 @@ class ConflictManager:
                                                                                 'coordinates': self._calculate_plan_coords(agt,blackboard[0][agt.agent_internal_id]),
                                                                                 'move_action_allowed': False
                                                                                 }
-
+                                                
+                                                print(f'box_id: {self.world_state.boxes[blackboard[0][v_id]][0][2]}',file=sys.stderr,flush=True)
+                                                print(f'helper agent box id: {helper_agt.current_box_id}',file=sys.stderr,flush=True)
 
                                                 #Current agent now gets NoOps in main until helping task is solved
                                                 #TODO: I main loop, fang hvis denne variable er true så skub NoOps. 
@@ -431,28 +461,57 @@ class ConflictManager:
                                 #NOT STATIONARY
                                 #Check if opposite directions of movement:
                                 if f'{row_0_idx},{col_0_idx}' == f'{row_1_v_id},{col_1_v_id}':
+                                    
 
                                     if v_id < len_agents:
+
+                                        #If we collide with agent, this conflict solved so skip solving the conflcit with this agt
+                                        skippo.append(v_id)
+                                        
                                         #Two agents - find out who has the highest priority 
                                         if agt.plan_category >= agents[v_id].plan_category:
-                                            able_to_move = self.replanner.replan_v1(self.world_state,agents[v_id],None,[blackboard[0][idx]])
+                                            
+                                            if idx < len_agents:
+                                                if agents[idx].current_box_id is not None:
+                                                    blocked = [blackboard[0][idx],blackboard[0][agents[idx].current_box_id + len_agents]]
+                                                else:
+                                                    blocked = [blackboard[0][idx]]
+                                            else:
+                                                b_agt_list = [agt for agt in agents if agt.current_box_id == idx-len_agents]
+                                                if len(b_agt_list)>0:
+                                                    b_agt_loc = blackboard[0][_agt_list[0].agent_internal_id]
+
+                                                    blocked = [blackboard[0][v_id],b_agt_loc]
+                                                else:
+                                                    blocked = [blackboard[0][v_id]]
+
+
+                                            able_to_move = self.replanner.replan_v1(self.world_state,agents[v_id],None,blocked)
 
                                             if not able_to_move:
                                                 bool_val = agents[v_id].search_conflict_bfs_not_in_list(world_state = self.world_state, \
                                                         agent_collision_internal_id = agt.agent_internal_id, \
                                                             agent_collision_box = box_id, \
                                                                 box_id = agents[v_id].agent_internal_id, \
-                                                                    coordinates = self._calculate_plan_coords(agt,blackboard[0][agt.agent_internal_id]))
+                                                                    coordinates = self._calculate_plan_coords(agt,blackboard[0][agt.agent_internal_id]),
+                                                                    move_action_allowed = False)
                                                 agents[v_id].plan.appendleft(Action(ActionType.NoOp, None, None))
 
                                                 if not bool_val:
-                                                    raise NotImplementedError(f'Agent {agents[v_id].agentagent_char} cannot move around or get away from {idx}')
+                                                    raise NotImplementedError(f'Agent {agents[v_id].agent_char} cannot move around or get away from {idx}')
 
                                             agt.plan.appendleft(Action(ActionType.NoOp, None, None))
                                             agt.plan.appendleft(Action(ActionType.NoOp, None, None))
 
                                         else:
-                                            able_to_move = self.replanner.replan_v1(self.world_state,agt,None,[blackboard[0][v_id]])
+
+                                            
+                                            if agents[v_id].current_box_id is not None:
+                                                blocked = [blackboard[0][v_id],blackboard[0][agents[v_id].current_box_id + len_agents]]
+                                            else:
+                                                blocked = [blackboard[0][v_id]]
+                                            
+                                            able_to_move = self.replanner.replan_v1(self.world_state,agt,None,blocked)
 
                                             if not able_to_move:
                                                 bool_val = agt.search_conflict_bfs_not_in_list(world_state = self.world_state, \
@@ -469,11 +528,34 @@ class ConflictManager:
                                             agents[v_id].plan.appendleft(Action(ActionType.NoOp, None, None))
                                     
                                     else:
+                                        
+
                                         #If moving box, find relevant agent
                                         box_agt = [agt for agt in agents if agt.current_box_id == v_id][0]
+
+                                        #Skip this agtens prereq collision in next idx iteration
+                                        skippo.append(box_agt.agent_internal_id)
+
                                         #Two agents - find out who has the highest priority 
                                         if agt.plan_category >= box_agt.plan_category:
-                                            able_to_move = self.replanner.replan_v1(self.world_state,box_agt,None,[blackboard[0][idx]])
+
+                                            if idx < len_agents:
+                                                if agents[idx].current_box_id is not None:
+                                                    blocked = [blackboard[0][idx],blackboard[0][agents[idx].current_box_id + len_agents]]
+                                                else:
+                                                    blocked = [blackboard[0][idx]]
+                                            else:
+                                                b_agt_list = [agt for agt in agents if agt.current_box_id == idx-len_agents]
+                                                if len(b_agt_list)>0:
+                                                    b_agt_loc = blackboard[0][_agt_list[0].agent_internal_id]
+
+                                                    blocked = [blackboard[0][v_id],b_agt_loc]
+                                                else:
+                                                    blocked = [blackboard[0][v_id]]
+                                            
+
+
+                                            able_to_move = self.replanner.replan_v1(self.world_state,box_agt,None,blocked)
 
                                             if not able_to_move:
                                                 bool_val = box_agt.search_conflict_bfs_not_in_list(world_state = self.world_state, \
@@ -490,7 +572,14 @@ class ConflictManager:
                                             agt.plan.appendleft(Action(ActionType.NoOp, None, None))
 
                                         else:
-                                            able_to_move = self.replanner.replan_v1(self.world_state,agt,None,[blackboard[0][v_id]])
+                                            
+                                            
+                                            blocked = [blackboard[0][v_id],blackboard[0][box_agt.agent_internal_id]]
+
+                        
+
+
+                                            able_to_move = self.replanner.replan_v1(self.world_state,agt,None,blocked)
 
                                             if not able_to_move:
                                                 bool_val = agt.search_conflict_bfs_not_in_list(world_state = self.world_state, \
@@ -519,7 +608,8 @@ class ConflictManager:
         for idx, obj in enumerate(blackboard[1]):
             current_state[blackboard[1][idx]].append(idx)
         
-        for loc,v in current_state.items():
+        print(f'current_state{current_state}',file=sys.stderr,flush=True)
+        for loc ,v in current_state.items():
             if len(v) > 1:
                 
                 '''

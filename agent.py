@@ -233,8 +233,13 @@ class search_agent(Agent):
                     strategy.add_to_frontier(child_state)
             iterations += 1
 
-    def search_replanner_heuristic(self, world_state: 'State', agent_to, box_from=None, box_to=None):
+    def search_replanner_heuristic(self, world_state: 'State',blocked_locations: list, agent_to, box_from=None, box_to=None):
         self.world_state = State(world_state)
+
+        #Add blocked locations as walls, so the search does not include locations
+        for loc in blocked_locations: 
+            row,col = loc.split(",")
+            self.world_state.walls[f'{row},{col}'] = True
 
         # TODO: Currently: quick fix to solve agent allowed moves problem - rewrite to allow for agents to move unassigned boxes
         if box_from is not None:
@@ -290,7 +295,7 @@ class search_agent(Agent):
             x = strategy.explored.pop()
             strategy.explored.add(x)
             for child_state in leaf.get_children(self.agent_char):
-                if not strategy.is_explored(child_state) and not strategy.in_frontier(child_state):
+                if not strategy.is_explored(child_state) and not strategy.in_frontier(child_state) and not child_state.g  > _cfg.max_replanning_steps:
                     strategy.add_to_frontier(child_state)
             iterations += 1
 
@@ -319,6 +324,7 @@ class search_agent(Agent):
             utils._get_agt_loc(self.world_state,self.agent_char),
             utils._get_box_loc(self.world_state, box_id))>1):
             box_id=None
+            move_action_allowed = True
 
         self.world_state = State(world_state)
 
@@ -358,17 +364,20 @@ class search_agent(Agent):
                 # TODO: Could not find a location where agent is not "in the way" - return something that triggers
                 the other collision object to move out of the way
                 '''
+                
                 return False
                 raise NotImplementedError()
 
             leaf = strategy.get_and_remove_leaf()
-            agt_loc = _get_agt_loc(leaf, self.agent_char)
-            box_loc = _get_box_loc(leaf, self.current_box_id)
 
+            agt_loc = utils._get_agt_loc(leaf, self.agent_char)
+            box_loc = utils._get_box_loc(leaf, self.current_box_id)
+            
             if (box_id is None) and (agt_loc not in coordinates):
                 self._reset_plan()
                 self._convert_plan_to_action_list(leaf.extract_plan())
-                break
+                return True
+                #break
             else:
                 if agt_loc not in coordinates and box_loc not in coordinates:
                     self._reset_plan()

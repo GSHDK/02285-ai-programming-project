@@ -34,9 +34,12 @@ class Replanner(metaclass=ABCMeta):
         self.world_state = State(world_state)
         assigned_box = agent.current_box_id
         _pop = [y for y, x in self.world_state.boxes.items() if (y not in blocked_location) or (x[0][2] == assigned_box)]
+        
         agent_dict = self.world_state.reverse_agent_dict()
 
         _agts_in_blocked = [x[0][1] for y, x in self.world_state.agents.items() if (y in blocked_location)]
+
+        
 
         # Remove boxes not in boxes_visible
         _agent_assinged_box = dict()
@@ -61,6 +64,8 @@ class Replanner(metaclass=ABCMeta):
                 if _v[0][1] not in _agts_in_blocked:
                     __to_be_removed.append(_k)
 
+
+       
         while len(__to_be_removed) > 0:
             temp_state.agents.pop(__to_be_removed.pop())
 
@@ -74,10 +79,12 @@ class Replanner(metaclass=ABCMeta):
         # Update world state for agent - check if it can be removed
         agent.world_state = State(temp_state)
 
+         # TODO: Implement if free location not found (goal location blocked, too far away)
+        
         for action in agent.plan:
             action_counter += 1
 
-            # To prevent to far replanning
+            # To prevent too far replanning
             # TODO: make dependent on level size
             if action_counter> config.max_replanning_depth:
                 return False
@@ -85,11 +92,16 @@ class Replanner(metaclass=ABCMeta):
             if action.action_type is ActionType.Move:
                 if box_not_moved:
                     if temp_state.is_free(f'{agent_row+action.agent_dir.d_row},{agent_col+action.agent_dir.d_col}'):
-                        temp_replan = agent.search_replanner_heuristic(temp_state, f'{agent_row+action.agent_dir.d_row},{agent_col+action.agent_dir.d_col}')
+                        temp_replan = agent.search_replanner_heuristic(temp_state,
+                                        blocked_locations=blocked_location, 
+                                        agent_to = f'{agent_row+action.agent_dir.d_row},{agent_col+action.agent_dir.d_col}')
                         # remove old plan
-                        merge_agent_plans(agent, temp_replan, action_counter)
-                        _replanned = True
-                        return True
+                        if temp_replan is None:
+                            return False
+                        else:
+                            merge_agent_plans(agent, temp_replan, action_counter)
+                            _replanned = True
+                            return True
                     else:
                         agent_row = agent_row + action.agent_dir.d_row
                         agent_col = agent_col + action.agent_dir.d_col
@@ -107,13 +119,17 @@ class Replanner(metaclass=ABCMeta):
                                 k_temp = None
 
                         temp_replan = agent.search_replanner_heuristic(temp_state,
+                                                        blocked_locations=blocked_location, 
                                                         agent_to=f'{agent_row+action.agent_dir.d_row},{agent_col+action.agent_dir.d_col}',
                                                         box_from=k_temp,
                                                         box_to=f'{box_row},{box_col}')
 
-                        merge_agent_plans(agent, temp_replan, action_counter)
-                        _replanned = True
-                        return True
+                        if temp_replan is None:
+                            return False
+                        else:
+                            merge_agent_plans(agent, temp_replan, action_counter)
+                            _replanned = True
+                            return True
 
                     elif temp_state.is_free(
                             f'{agent_row + action.agent_dir.d_row},{agent_col + action.agent_dir.d_col}') and not (temp_state.is_free(
@@ -138,13 +154,16 @@ class Replanner(metaclass=ABCMeta):
                             k_temp = None
 
                     temp_replan = agent.search_replanner_heuristic(temp_state,
+                                                                blocked_locations=blocked_location, 
                                                                 agent_to=f'{agent_row + action.agent_dir.d_row},{agent_col + action.agent_dir.d_col}',
                                                                 box_from=k_temp,
                                                                 box_to=f'{box_row},{box_col}')
-
-                    merge_agent_plans(agent, temp_replan, action_counter)
-                    _replanned=True
-                    return True
+                    if temp_replan is None:
+                        return False
+                    else:
+                        merge_agent_plans(agent, temp_replan, action_counter)
+                        _replanned=True
+                        return True
 
                 elif temp_state.is_free(
                         f'{agent_row + action.agent_dir.d_row},{agent_col + action.agent_dir.d_col}') and not (
@@ -174,12 +193,16 @@ class Replanner(metaclass=ABCMeta):
                             k_temp = None
 
                     temp_replan = agent.search_replanner_heuristic(temp_state,
+                                                                blocked_locations=blocked_location, 
                                                                 agent_to=f'{agent_row + action.agent_dir.d_row},{agent_col + action.agent_dir.d_col}',
                                                                 box_from=k_temp,
                                                                 box_to=f'{agent_row + action.agent_dir.d_row + action.box_dir.d_row},{agent_col + action.agent_dir.d_col + action.box_dir.d_col}')
-                    merge_agent_plans(agent, temp_replan, action_counter)
-                    _replanned=True
-                    return True
+                    if temp_replan is None:
+                        return False
+                    else:
+                        merge_agent_plans(agent, temp_replan, action_counter)
+                        _replanned=True
+                        return True
 
                 elif (temp_state.is_free
                     (f'{agent_row + action.agent_dir.d_row},{agent_col + action.agent_dir.d_col}')) and \
@@ -194,7 +217,6 @@ class Replanner(metaclass=ABCMeta):
                     box_row = agent_row + action.agent_dir.d_row + action.box_dir.d_row
                     box_col = agent_col + action.box_dir.d_col + action.box_dir.d_col
 
-        # TODO: Implement if free location not found (goal location blocked, too far away)
         if not _replanned:
             print(temp_state, file=sys.stderr, flush=True)
             #raise Exception('Goal location blocked or unreachable')

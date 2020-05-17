@@ -94,9 +94,11 @@ class GoalAssigner(Assigner):
         for task, values in self.box_tasks.items():
             if task in self.world_state.boxes.keys():
                 # TODO: change values[3] to refer to correct element (box id)
-                if self.world_state.boxes[task] == values[1]:
+                
+                if self.world_state.boxes[task][0][2] == values[1]:
                     # Save the task_id (goal_location)
                     solved_tasks.add(task)
+        
 
         # Find what jobs are currently getting executed
         current_execution = set()
@@ -135,7 +137,6 @@ class GoalAssigner(Assigner):
                 if (element.plan_category == config.solving_help_task) and (element.pending_task_bool):
                     # Update the world state
                     element.pending_task_dict['world_state'] = self.world_state
-                    print("ENTER", file=sys.stderr, flush=True)
                     element.pending_task_func(**element.pending_task_dict)
                     element.pending_task_bool=False
                     continue
@@ -157,11 +158,11 @@ class GoalAssigner(Assigner):
                         pass
                 else:
                     if (element.goal_job_id is not None) and (element.goal_job_id not in solved_tasks):
-                        print(box_reversed[element.current_box_id], file=sys.stderr, flush=True)
+                        
                         assignments_with_box[element.goal_job_id] = element
                         continue
 
-
+                
                 # We first get the goal_locations still needing boxes
                 # Potential boxes
 
@@ -196,7 +197,7 @@ class GoalAssigner(Assigner):
                     # no assignment for this agent
                     continue
                 assignments[best_element] = element
-
+        
         # If new box tasks found for agent - create format for delegate and assign
         if len(assignments_with_box)>0:
             self._delegate_task_with_box(assignments_with_box)

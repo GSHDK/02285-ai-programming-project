@@ -112,12 +112,13 @@ def main():
 
         
 
-
+        '''
         # All agents helping
         _helper_agents = {x.helper_agt_requester_id: x for x in list_agents if x.goal_job_id==config.solving_help_task}
 
         # issue noops if agent is still recieving help
 
+        
         #All agents reciving help
         _agents_reciving_help = [x for x in list_agents if (x.plan_category == config.awaiting_help) and (x.pending_help_pending_plan)]
 
@@ -132,12 +133,38 @@ def main():
             if _awaiting_done:
                 print('enter', file=sys.stderr,flush=True)
                 x._resume_plan()
+        '''
 
         # Give task to unassigned agents
         goal_assigner.reassign_tasks()
         print(current_state, file=sys.stderr,flush=True)
         # Solve the new colflicts
         conflict_manager.blackboard_conflictSolver(list_agents)
+
+        
+        # All agents helping
+        
+        _helper_agents = [x for x in list_agents if x.plan_category==config.solving_help_task] 
+
+        #All agents reciving help and have a plan left in the bag
+        _agents_reciving_help = [x for x in list_agents if (x.plan_category == config.awaiting_help) and (x.pending_help_pending_plan)]
+
+        # If in helping state noop untill tasks solved
+        for x in _agents_reciving_help:
+            _awaiting_done=True
+            for y in _helper_agents:
+                
+                if  (y.helper_agt_requester_id == x.agent_char) and ((len(y.plan) > 0) or y.pending_task_bool):
+                    x.plan.appendleft(Action(ActionType.NoOp, None, None))
+                    _awaiting_done=False
+                    print('eeeeeeeenter', file=sys.stderr,flush=True)
+                    break
+            if _awaiting_done:
+                print('enter', file=sys.stderr,flush=True)
+                x._resume_plan()
+
+
+
         for e in list_agents:
             if len(e.plan) > 0:
                 print(f'{e.plan[0]} {e.agent_char} after conflict ', file=sys.stderr, flush=True)
@@ -165,6 +192,7 @@ def main():
                 raise Exception("[FATAL ERROR] received false response from server")
 
         current_state.world_state_update(list_of_actions)
+        
 
         if current_state.world_is_goal_state():
             print("Done", file=sys.stderr, flush=True)
