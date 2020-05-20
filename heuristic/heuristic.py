@@ -17,8 +17,9 @@ class Heuristic(metaclass=ABCMeta):
     def __repr__(self):
         raise NotImplementedError
 
+    # add g value to make this the correct value
     def h(self, state: 'State') -> 'int':
-        return self.heuristic_function(self, state, self.dist_function)
+        return self.heuristic_function(self, state, self.dist_function) + state.g
 
 
 class AStar(Heuristic):
