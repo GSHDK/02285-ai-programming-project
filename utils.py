@@ -32,4 +32,4 @@ def _get_box_loc(state, box_id):
     for key, value in state.boxes.items():
         if box_id == value[0][2]:
             return key
-    raise Exception('Box not found')
+    raise Exception(f'Box not found, box_id given : {box_id}')

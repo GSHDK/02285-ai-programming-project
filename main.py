@@ -102,7 +102,7 @@ def main():
     conflict_manager.world_state = current_state
     conflict_manager.blackboard_conflictSolver(list_agents)
 
-    print('--------------------- while enter --------------------------',file=sys.stderr,flush=True)
+    
 
     # Whileloop
     counter = 0
@@ -120,6 +120,7 @@ def main():
         7. Update the world states in the different elements
 
         '''
+        print(f'-----------------------{counter}-----------------------',file=sys.stderr,flush=True)
 
 
 
@@ -127,13 +128,7 @@ def main():
         # print(f"{current_state.boxes} boxes", file=sys.stderr, flush=True)
         # print(f"{current_state.agents} agents", file=sys.stderr, flush=True)
 
-        for e in list_agents:
-            if len(e.plan) > 0:
-                # print(f'{e.agent_char} plan:{e.plan}', flush=True, file=sys.stderr)
-                print(f'{e.plan[0]} {e.agent_char} before conflict length: {len(e.plan)} category:{e.plan_category}', file=sys.stderr, flush=True)
-            else:
-                print(f'NoPlan for {e.agent_char} before conflict length: {len(e.plan)} category:{e.plan_category}', file=sys.stderr, flush=True)
-
+        
         # TODO: Check subgoal for agents - does it need to be updated
 
         # Keeps it from getting out of hand while testing
@@ -167,18 +162,26 @@ def main():
 
         # Give task to unassigned agents
         goal_assigner.reassign_tasks()
-        print(current_state, file=sys.stderr,flush=True)
+        
         # Solve the new colflicts
+        for e in list_agents:
+            if len(e.plan) > 0:
+                # print(f'{e.agent_char} plan:{e.plan}', flush=True, file=sys.stderr)
+                print(f'{e.plan[0]} {e.agent_char} before conflict length: {len(e.plan)} category:{e.plan_category}', file=sys.stderr, flush=True)
+            else:
+                print(f'NoPlan for {e.agent_char} before conflict length: {len(e.plan)} category:{e.plan_category}', file=sys.stderr, flush=True)
+
+
         print(f'############## pre BOX_IDS {[(agt.agent_char,agt.current_box_id) for agt in list_agents]}',file=sys.stderr,flush=True)
 
         conflict_manager.blackboard_conflictSolver(list_agents)
         print(f'############## post BOX_IDS {[(agt.agent_char,agt.current_box_id) for agt in list_agents]}',file=sys.stderr,flush=True)
 
-        
+        ''' Deprecated
         # All agents helping
         
         _helper_agents = [x for x in list_agents if x.plan_category==config.solving_help_task] 
-
+        
         #All agents reciving help and have a plan left in the bag
         _agents_reciving_help = [x for x in list_agents if (x.plan_category == config.awaiting_help) and (x.pending_help_pending_plan)]
 
@@ -194,8 +197,9 @@ def main():
                     break
             if _awaiting_done:
                 print('enter', file=sys.stderr,flush=True)
-                x._resume_plan()
-
+                #x._resume_plan()
+                ConflictManager.agent_amnesia(x)
+        '''
 
 
         for e in list_agents:

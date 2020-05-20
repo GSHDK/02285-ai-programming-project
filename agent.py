@@ -120,7 +120,7 @@ class search_agent(Agent):
                     strategy.add_to_frontier(child_state)
             iterations += 1
 
-    def search_with_box(self, world_state: 'State'):
+    def search_with_box(self, world_state: 'State',boxes_visible:list):
 
         # Get current location of box trying to move
         box_from = _get_box_loc(world_state, self.current_box_id)
@@ -145,8 +145,11 @@ class search_agent(Agent):
         removed_dict = {k: v for k, v in self.world_state.agents.items() if v[0][1] == self.agent_char}
         self.world_state.agents = defaultdict(list, removed_dict)
 
-        removed_dict = {k: v for k, v in self.world_state.boxes.items() if k == box_from}
+
+        #TODO: boxes_visible added so we can tell agent if there are goal dependencies to worry about (they have to be visible)
+        removed_dict = {k: v for k, v in self.world_state.boxes.items() if (k == box_from) or (k in boxes_visible)}
         self.world_state.boxes = defaultdict(list, removed_dict)
+        
 
         # make sure we only move this box
         self.world_state.sub_goal_box = self.current_box_id
@@ -245,6 +248,8 @@ class search_agent(Agent):
     def search_replanner_heuristic(self, world_state: 'State',blocked_locations: list, agent_to, box_from=None, box_to=None):
         self.world_state = State(world_state)
 
+        print(f'agent_to {agent_to}',file=sys.stderr,flush=True)
+
         #Add blocked locations as walls, so the search does not include locations
         for loc in blocked_locations: 
             row,col = loc.split(",")
@@ -263,6 +268,7 @@ class search_agent(Agent):
         self.world_state.agents = defaultdict(list, removed_dict)
 
         if box_from is None:
+            print(f'Enter box_from is none, agent_to {agent_to}',file=sys.stderr,flush=False)
             strategy = StrategyBestFirst(heuristic.AStar(self.world_state, heuristic_func.h_replanner_pos,
                                                          agent_to=agent_to,
                                                          agent_char=self.agent_char))
@@ -277,19 +283,28 @@ class search_agent(Agent):
 
         strategy.add_to_frontier(state=self.world_state)
 
+        print(f'AAAAgent init wordstate: {self.world_state}',file=sys.stderr,flush=False)
+
         iterations = 0
         while True:
 
             if iterations == 1000:
                 print(strategy.search_status(), file=sys.stderr, flush=True)
                 iterations = 0
+                
 
             if memory.get_usage() > memory.max_usage:
                 print('Maximum memory usage exceeded.', file=sys.stderr, flush=True)
+                for loc in blocked_locations: 
+                    row,col = loc.split(",")
+                    self.world_state.walls.pop(f'{row},{col}')
                 return None
 
             if strategy.frontier_empty():
                 # finished searchspace without sol
+                for loc in blocked_locations: 
+                    row,col = loc.split(",")
+                    self.world_state.walls.pop(f'{row},{col}')
                 return None
 
             leaf = strategy.get_and_remove_leaf()
@@ -298,13 +313,19 @@ class search_agent(Agent):
             # TODO: Update this to work with something else
             if strategy.heuristic.h(leaf) == 0:
                 _temp_plan = leaf.extract_plan()
+                for loc in blocked_locations: 
+                    row,col = loc.split(",")
+                    self.world_state.walls.pop(f'{row},{col}')
                 return [x.action for x in _temp_plan]
 
             strategy.add_to_explored(leaf)
-            x = strategy.explored.pop()
-            strategy.explored.add(x)
+
+            #TODO: HVAD er det her med x
+            #x = strategy.explored.pop()
+            #strategy.explored.add(x)
             for child_state in leaf.get_children(self.agent_char):
-                if not strategy.is_explored(child_state) and not strategy.in_frontier(child_state) and not child_state.g  > _cfg.max_replanning_steps:
+                if not strategy.is_explored(child_state) and not strategy.in_frontier(child_state) and not (child_state.g  > _cfg.max_replanning_steps):
+                    #print(f'XX h= {strategy.heuristic.h(leaf)}, g = {child_state.g} child_state {child_state}',file=sys.stderr,flush=True)
                     strategy.add_to_frontier(child_state)
             iterations += 1
 
@@ -328,7 +349,7 @@ class search_agent(Agent):
                                                                             'move_action_allowed': move_action_allowed
                                                                             }
 
-        print(f'>>> {d}',file=sys.stderr,flush=True)
+        print(f'>>> agent char : {self.agent_char},  {d}',file=sys.stderr,flush=True)
         #
 
         self.world_state = State(world_state)
@@ -366,7 +387,7 @@ class search_agent(Agent):
 
         #If agt is asked to move out of someones plan, then include this someone in the planinng
         if agent_collision_internal_id is not None:
-            self.world_state.redicter_search = True
+            self.world_state.redirecter_search = True
 
         removed_dict = {k: v for k, v in self.world_state.agents.items() if (v[0][1] == self.agent_char)
                         or (v[0][2] == agent_collision_internal_id)}
@@ -412,7 +433,9 @@ class search_agent(Agent):
             leaf = strategy.get_and_remove_leaf()
 
             agt_loc = utils._get_agt_loc(leaf, self.agent_char)
-            box_loc = utils._get_box_loc(leaf, self.current_box_id)
+
+            if box_id is not None:
+                box_loc = utils._get_box_loc(leaf, self.current_box_id)
             
             if (box_id is None) and (agt_loc not in coordinates):
                 self._reset_plan()

@@ -3,13 +3,15 @@ from collections import defaultdict
 from action import ALL_ACTIONS, ActionType, MOVE_ACTIONS
 import re
 import sys
+import config
 from copy import deepcopy as cp
 from utils import _remove_element
 
 
 
+
 class State:
-    _RNG = random.Random()
+    _RNG = random.Random(config.seed)
     walls = defaultdict(bool)
 
     def __init__(self, copy: 'State' = None):
@@ -78,7 +80,7 @@ class State:
             self.tunnels_reverse = defaultdict(list)
             self.wells_reverse = defaultdict(list)
 
-            self.redicter_search =False
+            self.redirecter_search =False
 
 
         else:
@@ -98,7 +100,7 @@ class State:
             self._dijkstras_location = copy._dijkstras_location
             self.dijkstras_map = copy.dijkstras_map
             
-            self.redicter_search = copy.redicter_search
+            self.redirecter_search = copy.redirecter_search
 
             #Level design variables
             self.tunnels = copy.tunnels
@@ -148,7 +150,7 @@ class State:
         elif self._dijkstras_location is not None:
             return new_position not in self.walls
         #Variable used when we ask agents to move out of plans
-        elif self.redicter_search:
+        elif self.redirecter_search:
             return (new_position not in self.agents) and (new_position not in self.boxes) and (new_position not in self.walls)
         else:
             # TODO: Solve the problem of moving into agent locations where the agent is "done"
@@ -173,9 +175,11 @@ class State:
         for key, value in self.agents.items():
             if value[0][1] == agentId:
                 agent_location = key
+        
         children = []
-        old_agent_location = [int(x) for x in re.findall(r'\d+', agent_location)]
+        old_agent_location = [int(x) for x in agent_location.split(',')]
         old_agent_location_string = f'{old_agent_location[0]},{old_agent_location[1]}'
+
         for action in ALL_ACTIONS:
             # Determine if action is applicable.
             new_agent_position = [old_agent_location[0]+action.agent_dir.d_row,
@@ -186,6 +190,7 @@ class State:
             new_agent_col = old_agent_location[1] + action.agent_dir.d_col
 
             if action.action_type is ActionType.Move:
+                
                 # only allow moves with mox
                 if not move_allowed:
                     continue
@@ -196,6 +201,7 @@ class State:
                     child.action = action
                     child.g += 1
                     children.append(child)
+                
             elif action.action_type is ActionType.Push:
                 if self.box_at(new_agent_location_string):
                     if self.boxes[new_agent_location_string][0][2] == self.sub_goal_box:
@@ -221,7 +227,7 @@ class State:
                             child.action = action
                             child.g += 1
                             children.append(child)
-
+        
         State._RNG.shuffle(children)
         return children
 

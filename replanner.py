@@ -31,8 +31,11 @@ class Replanner(metaclass=ABCMeta):
         :param blocked_location:
         :return:
         '''
+
+        print(f'&&&&& inputs: agent: {agent.agent_char}, assigned box {assigned_box}, blocked locations {blocked_location}',file=sys.stderr,flush=True)
         self.world_state = State(world_state)
         assigned_box = agent.current_box_id
+
         _pop = [y for y, x in self.world_state.boxes.items() if (y not in blocked_location) or (x[0][2] == assigned_box)]
         
         agent_dict = self.world_state.reverse_agent_dict()
@@ -57,7 +60,9 @@ class Replanner(metaclass=ABCMeta):
             else:
                 temp_state.boxes.pop(element)
 
-        # Remove other agents and let collision avoidance responsebility be at conflictmanager level.
+        print(f'Temp state boxes {temp_state.boxes}',file=sys.stderr,flush=True)
+
+        # Remove other agents and let collision avoidance responsibility be at conflictmanager level.
         __to_be_removed = []
         for _k, _v in temp_state.agents.items():
             if _v[0][1] != agent.agent_char:
@@ -69,6 +74,8 @@ class Replanner(metaclass=ABCMeta):
         while len(__to_be_removed) > 0:
             temp_state.agents.pop(__to_be_removed.pop())
 
+        print(f'Temp state agents {temp_state.agents}',file=sys.stderr,flush=True)
+
         location = [int(x) for x in agent_dict[agent.agent_char][1].split(",")]
         agent_row = location[0]
         agent_col = location[1]
@@ -76,25 +83,36 @@ class Replanner(metaclass=ABCMeta):
         action_counter = 0
         _replanned = False
 
+
+        print(f'agent location {location}, agent_row {agent_row}, agent_col {agent_col}',file=sys.stderr,flush=True)
+
         # Update world state for agent - check if it can be removed
+        temp_state.redirecter_search=True
         agent.world_state = State(temp_state)
 
-         # TODO: Implement if free location not found (goal location blocked, too far away)
         
         for action in agent.plan:
             action_counter += 1
 
             # To prevent too far replanning
             # TODO: make dependent on level size
-            if action_counter> config.max_replanning_depth:
+            if action_counter > config.max_replanning_depth:
+                print("&&&&&&&&& replanning limit reached", file=sys.stderr, flush=True)
                 return False
 
             if action.action_type is ActionType.Move:
                 if box_not_moved:
                     if temp_state.is_free(f'{agent_row+action.agent_dir.d_row},{agent_col+action.agent_dir.d_col}'):
+
+                        
+                        
+                        print(f'OOOO actioncounter {action_counter}, move {action.agent_dir} temp_state is free',file=sys.stderr,flush=True)
+
                         temp_replan = agent.search_replanner_heuristic(temp_state,
                                         blocked_locations=blocked_location, 
                                         agent_to = f'{agent_row+action.agent_dir.d_row},{agent_col+action.agent_dir.d_col}')
+                        
+                        print(f'temp replan {temp_replan}',file=sys.stderr,flush=True)
                         # remove old plan
                         if temp_replan is None:
                             return False
@@ -103,6 +121,7 @@ class Replanner(metaclass=ABCMeta):
                             _replanned = True
                             return True
                     else:
+                        print(f'actioncounter {action_counter}, move temp_state not free',file=sys.stderr,flush=True)
                         agent_row = agent_row + action.agent_dir.d_row
                         agent_col = agent_col + action.agent_dir.d_col
                 else:
@@ -157,7 +176,7 @@ class Replanner(metaclass=ABCMeta):
                                                                 blocked_locations=blocked_location, 
                                                                 agent_to=f'{agent_row + action.agent_dir.d_row},{agent_col + action.agent_dir.d_col}',
                                                                 box_from=k_temp,
-                                                                box_to=f'{box_row},{box_col}')
+                                                                box_to=f'{agent_row},{agent_col}')
                     if temp_replan is None:
                         return False
                     else:

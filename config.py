@@ -1,6 +1,8 @@
 # naming the client
 import sys
 
+import random
+
 client_name = "Deep_Plan"
 illegal_move_threshold = 10**10
 
@@ -12,7 +14,9 @@ max_replanning_depth=5
 
 max_replanning_steps=max_replanning_depth*2
 
-while_counter = 200
+while_counter = 400
+
+seed = 4
 
 no_task=1
 goal_assigner_location=2

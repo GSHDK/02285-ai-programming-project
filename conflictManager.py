@@ -139,11 +139,12 @@ class ConflictManager:
             
             prereq_state = defaultdict(list)
 
-            box_id = None
+            
 
             #Define idx agent
             if idx < len_agents:
                 agt = agents[idx]
+                box_id = agt.current_box_id
             else:
                 box_id = idx - len_agents
                 _agt_list = [agt for agt in agents if agt.current_box_id == box_id]
@@ -160,7 +161,7 @@ class ConflictManager:
                 if p_idx != idx:
                     prereq_state[p_loc].append(p_idx)
 
-            print(f'idx: {idx}, preqeq state{prereq_state}',file=sys.stderr,flush=True)
+            print(f'idx: {idx}',file=sys.stderr,flush=True)
             for _,v in prereq_state.items():
                 #If multiple indexes hash to same value, then we have a conflict
                 if len(v) > 1:
@@ -203,36 +204,25 @@ class ConflictManager:
                                     if v_id < len_agents:
                                         #Stationary oject is an agent.
 
-                                        #Ask agent to move out of idx_agt plan
-                                        idx_plan = self._calculate_plan_coords(agt,blackboard[0][idx])
-                                        possible = agents[v_id].search_conflict_bfs_not_in_list(self.world_state,idx, agt.current_box_id, agents[v_id].current_box_id, \
-                                            coordinates = idx_plan)
+                                        
+                                        #Ask v_id to plan a path out of well
+                                        agents[v_id].search_conflict_bfs_not_in_list(self.world_state,None,None,agents[v_id].current_box_id, \
+                                            coordinates = self.world_state.wells_reverse[self.world_state.wells[blackboard[0][v_id]][0]])
 
-                                        if possible:
-                                            #***
-                                            agents[v_id].plan_category = _cfg.solving_help_task
-                                            agt.plan.appendleft(Action(ActionType.NoOp, None, None))
-                                            agents[v_id].plan.appendleft(Action(ActionType.NoOp, None, None))
-                                            
-                                        else:
-                                            #Ask v_id to plan a path out of well
-                                            agents[v_id].search_conflict_bfs_not_in_list(self.world_state,None,None,agents[v_id].current_box_id, \
-                                                coordinates = self.world_state.wells_reverse[self.world_state.wells[blackboard[0][v_id]][0]])
+                                        #Solve precondition conflict
+                                        agents[v_id].plan.appendleft(Action(ActionType.NoOp, None, None))
 
-                                            #Solve precondition conflict
-                                            agents[v_id].plan.appendleft(Action(ActionType.NoOp, None, None))
+                                        #Then ask outer (idx) agent to move out of v_id's plan:
+                                        #If idx agent hav a box, then only search with push and pull movements
+                                        agt.search_conflict_bfs_not_in_list(self.world_state,v_id,agents[v_id].current_box_id,agt.current_box_id, \
+                                            self._calculate_plan_coords(agents[v_id],blackboard[0][v_id]), move_action_allowed = False)
 
-                                            #Then ask outer (idx) agent to move out of v_id's plan:
-                                            #If idx agent hav a box, then only search with push and pull movements
-                                            agt.search_conflict_bfs_not_in_list(self.world_state,v_id,agents[v_id].current_box_id,agt.current_box_id, \
-                                                self._calculate_plan_coords(agents[v_id],blackboard[0][v_id]), move_action_allowed = False)
-
-                                            agents[v_id].plan_category=_cfg.solving_help_task
-                                            agt.plan_category= _cfg.awaiting_help
-                                            agt.helper_id = (agents[v_id].agent_char, agents[v_id].agent_internal_id)
-                                            
-                                            #***
-                                            agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                        agents[v_id].plan_category=_cfg.solving_help_task
+                                        agt.plan_category= _cfg.awaiting_help
+                                        agt.helper_id = (agents[v_id].agent_char, agents[v_id].agent_internal_id)
+                                        
+                                        #***
+                                        agt.plan.appendleft(Action(ActionType.NoOp, None, None))
 
 
                                     else:
@@ -424,7 +414,8 @@ class ConflictManager:
 
 
 
-                                    able_to_move = self.replanner.replan_v1(self.world_state,agt ,box_id,blocked)
+                                    able_to_move = self.replanner.replan_v1(self.world_state,agt ,box_id, blocked)
+                                    print(f'stationary open space,  able to move {able_to_move}',file=sys.stderr,flush=True)
                                     
                                     # TODO: Change states and categories to the appropiate values
                                     if not able_to_move:
@@ -495,9 +486,12 @@ class ConflictManager:
                                                 if helper_agt.agent_char != agt.agent_char:
                                                     #***
                                                     agt.plan.appendleft(Action(ActionType.NoOp, None, None))
-                                                    agt.pending_help_pending_plan = True
+                                                    #agt.pending_help_pending_plan = True
+                                                    agt.pending_help = True
                                                     agt.helper_id = (helper_agt.agent_char, helper_agt.agent_internal_id)
                                                     agt.plan_category = _cfg.awaiting_help   
+                                    else:
+                                        agt.plan.appendleft(Action(ActionType.NoOp, None, None))
                                                                                    
                             else:
                                 #NOT STATIONARY
@@ -512,6 +506,8 @@ class ConflictManager:
                                         
                                         #Two agents - find out who has the highest priority 
                                         if agt.plan_category >= agents[v_id].plan_category:
+
+                                            print(f'HHH idx agt most important {idx} , agents[v_id] {agents[v_id].agent_internal_id}',file=sys.stderr,flush=True)
                                             
                                             if idx < len_agents:
                                                 if agents[idx].current_box_id is not None:
@@ -523,31 +519,51 @@ class ConflictManager:
                                                 if len(b_agt_list)>0:
                                                     b_agt_loc = blackboard[0][_agt_list[0].agent_internal_id]
 
-                                                    blocked = [blackboard[0][v_id],b_agt_loc]
+                                                    blocked = [blackboard[0][idx],b_agt_loc]
                                                 else:
-                                                    blocked = [blackboard[0][v_id]]
+                                                    blocked = [blackboard[0][idx]]
+                                                    raise Exception(f'[SHOULD NOT HAPPEN] line 520,idx {idx}')
 
 
                                             able_to_move = self.replanner.replan_v1(self.world_state,agents[v_id],None,blocked)
-
+                                            print(f'HHH able to move?  {able_to_move},',file=sys.stderr,flush=True)
                                             if not able_to_move:
                                                 bool_val = agents[v_id].search_conflict_bfs_not_in_list(world_state = self.world_state, \
                                                         agent_collision_internal_id = agt.agent_internal_id, \
                                                             agent_collision_box = box_id, \
-                                                                box_id = agents[v_id].agent_internal_id, \
+                                                                box_id = agents[v_id].current_box_id, \
                                                                     coordinates = self._calculate_plan_coords(agt,blackboard[0][agt.agent_internal_id]),
                                                                     move_action_allowed = False)
-                                                agents[v_id].plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                
 
                                                 if not bool_val:
-                                                    raise NotImplementedError(f'Agent {agents[v_id].agent_char} cannot move around or get away from {idx}')
+                                                    #Okay back down
+                                                    bool_val = agt.search_conflict_bfs_not_in_list(world_state = self.world_state, \
+                                                        agent_collision_internal_id = v_id, \
+                                                            agent_collision_box = agents[v_id].current_box_id, \
+                                                                box_id = agt.current_box_id, \
+                                                                    coordinates = self._calculate_plan_coords(agents[v_id],blackboard[0][v_id]),
+                                                                        move_action_allowed = False)
+                                                    agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                    agents[v_id].plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                    agents[v_id].plan.appendleft(Action(ActionType.NoOp, None, None))
 
-                                            agt.plan.appendleft(Action(ActionType.NoOp, None, None))
-                                            agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                    if not bool_val:
+                                                        raise Exception('really unexpected error, 548')
+
+                                                else:
+                                                    agents[v_id].plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                    agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                    agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                            else:
+                                                agents[v_id].plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                            
 
                                         else:
+                                            #v_id is more important
 
-                                            
                                             if agents[v_id].current_box_id is not None:
                                                 blocked = [blackboard[0][v_id],blackboard[0][agents[v_id].current_box_id + len_agents]]
                                             else:
@@ -561,19 +577,36 @@ class ConflictManager:
                                                             agent_collision_box = agents[v_id].current_box_id, \
                                                                 box_id = agt.current_box_id, \
                                                                     coordinates = self._calculate_plan_coords(agents[v_id],blackboard[0][v_id]))
-                                                agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                
 
                                                 if not bool_val:
-                                                    raise NotImplementedError(f'Agent {agents[v_id].agent_char} cannot move around or get away from {idx}')
+                                                    bool_val = agents[v_id].search_conflict_bfs_not_in_list(world_state = self.world_state, \
+                                                        agent_collision_internal_id = agt.agent_internal_id, \
+                                                            agent_collision_box = agt.current_box_id, \
+                                                                box_id = agents[v_id].current_box_id, \
+                                                                    coordinates = self._calculate_plan_coords(agt,blackboard[0][agt.agent_internal_id]),\
+                                                                        move_action_allowed = False)
+                                                    agents[v_id].plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                    agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                    agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                    
+                                                    if not bool_val:
+                                                        raise Exception('really unexpected error, 585')
+                                               
+                                                else:
 
-                                            agents[v_id].plan.appendleft(Action(ActionType.NoOp, None, None))
-                                            agents[v_id].plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                    agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                    agents[v_id].plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                    agents[v_id].plan.appendleft(Action(ActionType.NoOp, None, None))
+                                            else:
+                                                agents[v_id].plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                agt.plan.appendleft(Action(ActionType.NoOp, None, None))
                                     
                                     else:
                                         
-
                                         #If moving box, find relevant agent
-                                        box_agt = [agt for agt in agents if agt.current_box_id == v_id][0]
+                                        box_agt = [agt for agt in agents if agt.current_box_id == v_id-len_agents][0]
 
                                         #Skip this agtens prereq collision in next idx iteration
                                         skippo.append(box_agt.agent_internal_id)
@@ -602,40 +635,75 @@ class ConflictManager:
                                             if not able_to_move:
                                                 bool_val = box_agt.search_conflict_bfs_not_in_list(world_state = self.world_state, \
                                                         agent_collision_internal_id = agt.agent_internal_id, \
-                                                            agent_collision_box = agt.current_box_id, \
-                                                                box_id = agents[v_id].current_box_id, \
-                                                                    coordinates = self._calculate_plan_coords(agt,blackboard[0][agt.agent_internal_id]))
-                                                box_agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                            agent_collision_box = box_id, \
+                                                                box_id = box_agt.current_box_id, \
+                                                                    coordinates = self._calculate_plan_coords(agt,blackboard[0][agt.agent_internal_id]),
+                                                                    move_action_allowed = False)
+                                                
 
                                                 if not bool_val:
-                                                    raise NotImplementedError(f'Agent {box_agt.agentagent_char} cannot move around or get away from {idx}')
+                                                    #Okay back down
+                                                    bool_val = agt.search_conflict_bfs_not_in_list(world_state = self.world_state, \
+                                                        agent_collision_internal_id = box_agt.agent_internal_id, \
+                                                            agent_collision_box = box_agt.current_box_id, \
+                                                                box_id = agt.current_box_id, \
+                                                                    coordinates = self._calculate_plan_coords(box_agt,blackboard[0][box_agt.agent_internal_id]),
+                                                                        move_action_allowed = False)
+                                                    agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                    box_agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                    box_agt.plan.appendleft(Action(ActionType.NoOp, None, None))
 
-                                            agt.plan.appendleft(Action(ActionType.NoOp, None, None))
-                                            agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                    if not bool_val:
+                                                        raise Exception('really unexpected error, 641')
+
+                                                else:
+                                                    box_agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                    agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                    agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                            else:
+                                                box_agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                agt.plan.appendleft(Action(ActionType.NoOp, None, None))
 
                                         else:
                                             
                                             
                                             blocked = [blackboard[0][v_id],blackboard[0][box_agt.agent_internal_id]]
 
-                        
-
-
                                             able_to_move = self.replanner.replan_v1(self.world_state,agt,None,blocked)
+
 
                                             if not able_to_move:
                                                 bool_val = agt.search_conflict_bfs_not_in_list(world_state = self.world_state, \
                                                         agent_collision_internal_id = box_agt.agent_internal_id, \
-                                                            agent_collision_box = v_id, \
+                                                            agent_collision_box = box_agt.current_box_id, \
                                                                 box_id = agt.current_box_id, \
                                                                     coordinates = self._calculate_plan_coords(box_agt,blackboard[0][box_agt.agent_internal_id]))
-                                                agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                
 
                                                 if not bool_val:
-                                                    raise NotImplementedError(f'Agent {box_agt.agentagent_char} cannot move around or get away from {idx}')
+                                                    bool_val = box_agt.search_conflict_bfs_not_in_list(world_state = self.world_state, \
+                                                        agent_collision_internal_id = agt.agent_internal_id, \
+                                                            agent_collision_box = agt.current_box_id, \
+                                                                box_id = box_agt.current_box_id, \
+                                                                    coordinates = self._calculate_plan_coords(agt,blackboard[0][agt.agent_internal_id]),\
+                                                                        move_action_allowed = False)
+                                                    box_agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                    agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                    agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                    
+                                                    if not bool_val:
+                                                        raise Exception('really unexpected error, 679')
+                                               
+                                                else:
 
-                                            box_agt.plan.appendleft(Action(ActionType.NoOp, None, None))
-                                            box_agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                    agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                    box_agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                    box_agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                            else:
+                                                agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                box_agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                box_agt.plan.appendleft(Action(ActionType.NoOp, None, None))
 
                                 else:
                                     #Wait for prereq location to be free
@@ -654,6 +722,7 @@ class ConflictManager:
         for loc ,v in current_state.items():
             if len(v) > 1:
 
+                print(f'<><>v {v}',file=sys.stderr,flush=True)
                 '''
                 For collisions we prioritize the agent with the most important job
                 '''
@@ -664,13 +733,14 @@ class ConflictManager:
                     if idc < len_agents:
                         agt_list.append(agents[idc])
                     else:
-                        _agt_list = [agt for agt in agents if agt.current_box_id == box_id]
+                        _agt_list = [agt for agt in agents if agt.current_box_id == idc-len_agents]
                         if len(_agt_list) > 0:
                             box_agt = _agt_list[0]
                         else:
                             continue
                         agt_list.append(box_agt)
-                
+                print(f'<><>agt_list {[x.agent_char for x in agt_list]}',file=sys.stderr,flush=True)
+
                 prez = -1
                 prez_category = -10
                 for p_id, ag in enumerate(agt_list):
@@ -678,6 +748,7 @@ class ConflictManager:
                         prez_category = ag.plan_category
                         prez = p_id
 
+                print(f'prez: {prez}, category {prez_category}',file=sys.stderr,flush=True)
 
                 for idc, ag in enumerate(agt_list):
                     if idc != prez:
@@ -784,8 +855,9 @@ class ConflictManager:
                 if  (dist < min_dist) and (agt.plan_category!=_cfg.solving_help_task):
                     min_dist = dist
                     helper_agt = agt  
-            helper_agt.current_box_id = box_loc_id
-            print(f'XXXXXXXXXXXX Helper_agt_id {helper_agt.current_box_id}',file=sys.stderr,flush=True)
+            if helper_agt is not None:
+                helper_agt.current_box_id = box_loc_id
+                print(f'XXXXXXXXXXXX Helper_agt_id box {helper_agt.current_box_id}',file=sys.stderr,flush=True)
             return helper_agt
 
 

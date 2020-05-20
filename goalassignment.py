@@ -81,6 +81,7 @@ class GoalAssigner(Assigner):
                                 _temp_dist = _x
 
                 used_ids.add(box_tasks[element][1])
+        
 
         agent_tasks = self.world_state.agents_goal
         # TODO: print
@@ -112,6 +113,10 @@ class GoalAssigner(Assigner):
         # All potential without handeling dependencies in excecution ..
         potential_tasks = all_tasks.difference(current_execution)
         potential_tasks = potential_tasks.difference(solved_tasks)
+
+        print(f'$$$$$$$$$ potential_tasks {potential_tasks}',file=sys.stderr,flush=True)
+        print(f'$$$$$$$$$ goal dependencies {self.goal_dependencies}',file=sys.stderr,flush=True)
+
 
         # All unsolved tasks with dependencies
         pending_tasks = set()
@@ -145,7 +150,6 @@ class GoalAssigner(Assigner):
                 # reset agent to be free
                 print(f'+++++++ before WE ENTER , current exec {current_execution}',file=sys.stderr,flush=True)
                 if element.goal_job_id not in current_execution and element.plan_category != config.awaiting_help:
-                    
                     element._reset_from_help()
                 elif element.plan_category == config.awaiting_help:
                     print(f'+++++++ WAITING help , current exec {current_execution}',file=sys.stderr,flush=True)
@@ -159,9 +163,13 @@ class GoalAssigner(Assigner):
                     print(f'_ele.helper_agt_req: {_ele.helper_agt_requester_id}',file=sys.stderr,flush=True)
                     print(f'_ele.helper_agt_req: {element.agent_char}',file=sys.stderr,flush=True)
                     if _ele.helper_agt_requester_id==element.agent_char:
+                        
                         print(f'waiting for agent still', file=sys.stderr,flush=True)
                         element.plan.appendleft(Action(ActionType.NoOp, None, None))
                         continue
+                    
+
+    
                                             
                 else:
                     if (element.goal_job_id is not None) and (element.goal_job_id not in solved_tasks):
@@ -210,6 +218,7 @@ class GoalAssigner(Assigner):
         # If new box tasks found for agent - create format for delegate and assign
         if len(assignments_with_box)>0:
             print(f">>>>>>>Goal Assigner, assignment_with_box {assignments_with_box}",file=sys.stderr,flush=True)
+            #assignment_with_box {'11,4': search agent}
             self._delegate_task_with_box(assignments_with_box)
 
         if len(assignments) > 0:
@@ -253,11 +262,12 @@ class GoalAssigner(Assigner):
         '''
         Maps the assignments to agents that should search for pushing a box to a goal location
         :param assignments: dict with key (element.goal_job_id, box_reversed[element.current_box_id]) and agent as value
+        :param goal_dependencies: able to show agent the boxes that are placed in a well aldready, so it does not plan to pull a goal dependent box 
         :return: nothing
         '''
         for k, v in assignments.items():
             v.plan_category = config.goal_assigner_box
-            v.search_with_box(self.world_state)
+            v.search_with_box(self.world_state,self.goal_dependencies[k])
 
     def _delegate_tasks_agent(self, assignments):
         for k, v in assignments.items():
