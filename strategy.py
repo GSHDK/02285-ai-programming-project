@@ -3,6 +3,9 @@ from collections import deque
 from time import perf_counter
 from heapq import heappush, heappop
 import sys
+from math import inf
+from dataclasses import dataclass, field
+
 
 import memory
 
@@ -10,6 +13,7 @@ import memory
 class Strategy(metaclass=ABCMeta):
     def __init__(self):
         self.explored = set()
+        self._frontier_g = dict()
         self.start_time = perf_counter()
 
     def add_to_explored(self, state: 'State'):
@@ -17,6 +21,12 @@ class Strategy(metaclass=ABCMeta):
 
     def is_explored(self, state: 'State') -> 'bool':
         return state in self.explored
+
+    def frontier_g(self, state: 'State') -> 'bool':
+        if hash(state) in self._frontier_g:
+            return self._frontier_g[hash(state)]
+        else:
+            return inf
 
     def explored_count(self) -> 'int':
         return len(self.explored)
@@ -138,11 +148,14 @@ class StrategyBestFirst(Strategy):
 
     def get_and_remove_leaf(self) -> 'State':
         leaf = heappop(self.frontier)[1]
-        self.frontier_set.remove(leaf)
+        try:
+            self.frontier_set.remove(leaf)
+        except:
+            pass
         return leaf
 
     def add_to_frontier(self, state: 'State'):
-
+        self._frontier_g[hash(state)] = state.g
         temp = (self.heuristic.f(state), state)
         heappush(self.frontier, temp)
         self.frontier_set.add(temp[1])

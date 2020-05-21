@@ -376,6 +376,8 @@ class State:
             _hash = _hash * prime + hash(temp)
             if self._dijkstras_location is not None:
                 _hash = hash(self._dijkstras_location) * 11
+            if self.g != 0 and self._dijkstras_location is None:
+                _hash=_hash*prime*self.g
             self._hash = _hash
         return self._hash
     

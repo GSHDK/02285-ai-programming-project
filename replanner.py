@@ -31,7 +31,6 @@ class Replanner(metaclass=ABCMeta):
         :param blocked_location:
         :return:
         '''
-
         self.world_state = State(world_state)
         assigned_box = agent.current_box_id
 
@@ -142,6 +141,7 @@ class Replanner(metaclass=ABCMeta):
                     elif temp_state.is_free(
                             f'{agent_row + action.agent_dir.d_row},{agent_col + action.agent_dir.d_col}') and not (temp_state.is_free(
                             f'{box_row},{box_col}')):
+                        continue
                         raise Exception('Weird case of movement for agent/replanning/shit')
 
                     else:
@@ -216,6 +216,7 @@ class Replanner(metaclass=ABCMeta):
                     (f'{agent_row + action.agent_dir.d_row},{agent_col + action.agent_dir.d_col}')) and \
                         not (temp_state.is_free
                             (f'{agent_row + action.agent_dir.d_row + action.box_dir.d_row},{agent_col + action.agent_dir.d_col + action.box_dir.d_col}')):
+                    continue
                     raise Exception('Weird case of movement for agent/replanning/shit')
 
                 else:

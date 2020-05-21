@@ -22,9 +22,9 @@ class Heuristic(metaclass=ABCMeta):
     def f(self, state: 'State'):
         raise NotImplementedError
 
-    # # add g value to make this the correct value
-    # def h(self, state: 'State') -> 'int':
-    #     return self.heuristic_function(self, state, self.dist_function)
+    # add g value to make this the correct value
+    def h(self, state: 'State') -> 'int':
+        return self.heuristic_function(self, state, self.dist_function)
 
 
 class AStar(Heuristic):

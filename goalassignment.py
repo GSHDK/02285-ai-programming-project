@@ -242,8 +242,10 @@ class GoalAssigner(Assigner):
         :return: nothing
         '''
         for k, v in assignments.items():
+            if not v.search_to_box(self.world_state, k[1], k[2]):
+                continue
+            # v.search_to_box(self.world_state, k[1], k[2])
             v.plan_category = config.goal_assigner_box
-            v.search_to_box(self.world_state, k[1], k[2])
             # Assign appropiate values
             v.goal_job_id = k[0]
 

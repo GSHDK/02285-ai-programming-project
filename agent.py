@@ -75,7 +75,8 @@ class search_agent(Agent):
         if self.strategy == StrategyBestFirst:
             strategy = self.strategy(heuristic.AStar(self.world_state, heuristic_func.h_goalassigner_to_box,
                                                          agent_char=self.agent_char,
-                                                         box_loc=box_loc))
+                                                         box_loc=box_loc,
+                                                         box_id=box_id))
         else:
             strategy = self.strategy()
         # In case there has been a previous search we need to clear the elements in the strategy object
@@ -95,10 +96,9 @@ class search_agent(Agent):
 
         iterations = 0
         while True:
-            if self.agent_char==1 and self.current_box_id==3:
-                print(strategy.frontier, file=sys.stderr,flush=True)
             if iterations == 1000:
                 print(strategy.search_status(), file=sys.stderr, flush=True)
+                print([x[0] for x in strategy.frontier], file=sys.stderr, flush=True)
                 iterations = 0
 
             if memory.get_usage() > memory.max_usage:
@@ -108,14 +108,18 @@ class search_agent(Agent):
             if strategy.frontier_empty():
                 print(f'{self.agent_char}', file=sys.stderr, flush=True)
                 print('Empty frontier SearchToBox', file=sys.stderr, flush=True)
-                return None
+                return False
 
             leaf = strategy.get_and_remove_leaf()
+            print(f"f for latest popped:{strategy.heuristic.f(leaf)}\n popped state={leaf}\n",file=sys.stderr, flush=True)
+            print(f"ite:{iterations}",file=sys.stderr, flush=True)
+
+
 
             # We are now adjecent to the box
             if strategy.heuristic.h(leaf) == 1:
                 self._convert_plan_to_action_list(leaf.extract_plan())
-                break
+                return True
 
             strategy.add_to_explored(leaf)
             x = strategy.explored.pop()
@@ -123,13 +127,22 @@ class search_agent(Agent):
             for child_state in leaf.get_children(self.agent_char):
                 if not strategy.is_explored(child_state) and not strategy.in_frontier(child_state):
                     strategy.add_to_frontier(child_state)
+                # elif strategy.is_explored(child_state):
+                #     if child_state.g <= strategy.explored_g(child_state):
+                #         strategy.add_to_frontier(child_state)
+
             iterations += 1
+            print(strategy.frontier, file=sys.stderr, flush=True)
+            print(f"\n \n",file=sys.stderr, flush=True)
 
     def search_with_box(self, world_state: 'State',boxes_visible:list):
 
         # Get current location of box trying to move
         box_from = _get_box_loc(world_state, self.current_box_id)
-        print(f'Search with box: box_from: {box_from}, box_id = {self.current_box_id}')
+
+        # In case where
+
+        print(f'Search with box: box_from: {box_from}, box_id = {self.current_box_id}', file=sys.stderr)
 
         if world_state.boxes[box_from][0][0] != self.agent_color:
             raise Exception("Agent cannot move this box")
