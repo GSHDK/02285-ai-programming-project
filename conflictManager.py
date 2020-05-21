@@ -55,6 +55,10 @@ class ConflictManager:
         for loc,box in self.world_state.boxes.items():
             row,col = loc.split(',')
 
+            print(box[0][2], file=sys.stderr, flush=True)
+            print(box, file=sys.stderr, flush=True)
+            print(len(blackboard[0]), file=sys.stderr, flush=True)
+
             blackboard[0][box[0][2]+len_agents] = f'{row},{col}'
 
         #Set coordinates after 1 action
@@ -473,7 +477,17 @@ class ConflictManager:
                                                                 box_id = agents[v_id].current_box_id, \
                                                                     coordinates = self._calculate_plan_coords(agt,blackboard[0][agt.agent_internal_id]))
                                             if not bool_val:
-                                                raise NotImplementedError(f'Deadlock between agents, idx: {idx} and v_id: {v_id}')
+                                                agents[v_id].search_conflict_bfs_not_in_list(
+                                                    world_state=self.world_state, \
+                                                    agent_collision_internal_id=None, \
+                                                    agent_collision_box=None, \
+                                                    box_id=agents[v_id].current_box_id, \
+                                                    coordinates=self._calculate_plan_coords(agt, blackboard[0][agt.agent_internal_id]))
+
+                                                agt.plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                agents[v_id].plan.appendleft(Action(ActionType.NoOp, None, None))
+                                                # print(f"idx:{idx}, vid:{v_id} , {self._calculate_plan_coords(agt,blackboard[0][agt.agent_internal_id])}")
+                                                # raise NotImplementedError(f'Deadlock between agents, idx: {idx} and v_id: {v_id}')
                                                 # Agent cannot move out of plan
                                             else:
                                                 #If agents was able to move our of idx's plan, give 1 NoOp so we dont collide 

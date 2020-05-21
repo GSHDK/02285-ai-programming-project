@@ -14,15 +14,19 @@ max_replanning_depth=5
 
 max_replanning_steps=max_replanning_depth*2
 
-while_counter = 20
+while_counter = 500
+
+# This is the maximum amount of nodes allowed to explored
+max_search_depth = 2000
 
 #Random agents variables
 initiate_random_agents = True
 agent_max_stall = 5
 
 #FOR OUR OWN LEVEL, seed = 88
-seed = 82
-seed = 899
+seed = 899 # best atm
+seed = 17
+
 
 
 

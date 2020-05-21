@@ -95,9 +95,14 @@ class search_agent(Agent):
         strategy.add_to_frontier(state=self.world_state)
 
         iterations = 0
+        _counter = 0
         while True:
+
+            if _counter == _cfg.max_search_depth:
+                return False
+
             if iterations == 1000:
-                print(strategy.search_status(), file=sys.stderr, flush=True)
+                print(f"search to box {strategy.search_status()}", file=sys.stderr, flush=True)
                 iterations = 0
 
             if memory.get_usage() > memory.max_usage:
@@ -129,7 +134,7 @@ class search_agent(Agent):
                 #         strategy.add_to_frontier(child_state)
 
             iterations += 1
-
+            _counter += 1
 
     def search_with_box(self, world_state: 'State',boxes_visible:list):
 
@@ -171,9 +176,14 @@ class search_agent(Agent):
         strategy.add_to_frontier(state=self.world_state)
 
         iterations = 0
+        _counter = 0
         while True:
+
+            if _counter == _cfg.max_search_depth:
+                return False
+
             if iterations == 1000:
-                print(strategy.search_status(), file=sys.stderr, flush=True)
+                print(f"with box{strategy.search_status()}", file=sys.stderr, flush=True)
                 iterations = 0
 
             if memory.get_usage() > memory.max_usage:
@@ -199,6 +209,7 @@ class search_agent(Agent):
                 if not strategy.is_explored(child_state) and not strategy.in_frontier(child_state):
                     strategy.add_to_frontier(child_state)
             iterations += 1
+            _counter += 1
 
     def search_position(self, world_state: 'State', agent_to):
 
@@ -234,9 +245,14 @@ class search_agent(Agent):
         strategy.add_to_frontier(state=self.world_state)
 
         iterations = 0
+        _counter = 0
         while True:
+
+            if _counter == _cfg.max_search_depth:
+                return False
+
             if iterations == 1000:
-                print(strategy.search_status(), file=sys.stderr, flush=True)
+                print(f"search pos {strategy.search_status()}", file=sys.stderr, flush=True)
                 iterations = 0
 
             if memory.get_usage() > memory.max_usage:
@@ -262,6 +278,7 @@ class search_agent(Agent):
                 if not strategy.is_explored(child_state) and not strategy.in_frontier(child_state):
                     strategy.add_to_frontier(child_state)
             iterations += 1
+            _counter += 1
 
     def search_replanner_heuristic(self, world_state: 'State',blocked_locations: list, agent_to, box_from=None, box_to=None):
         self.world_state = State(world_state)
@@ -299,10 +316,14 @@ class search_agent(Agent):
         strategy.add_to_frontier(state=self.world_state)
 
         iterations = 0
+        _counter = 0
         while True:
 
+            if _counter == _cfg.max_search_depth:
+                return False
+
             if iterations == 1000:
-                print(strategy.search_status(), file=sys.stderr, flush=True)
+                print(f"replanner H{strategy.search_status()}", file=sys.stderr, flush=True)
                 iterations = 0
                 
 
@@ -342,6 +363,7 @@ class search_agent(Agent):
                     #print(f'XX h= {strategy.heuristic.h(leaf)}, g = {child_state.g} child_state {child_state}',file=sys.stderr,flush=True)
                     strategy.add_to_frontier(child_state)
             iterations += 1
+            _counter += 1
 
     def search_conflict_bfs_not_in_list(self, world_state: 'State', agent_collision_internal_id, agent_collision_box, box_id,
                                         coordinates: list, move_action_allowed=True):
@@ -416,9 +438,14 @@ class search_agent(Agent):
         strategy.add_to_frontier(state=self.world_state)
 
         iterations = 0
+        _counter = 0
         while True:
+
+            if _counter == _cfg.max_search_depth:
+                return False
+
             if iterations == 1000:
-                print(strategy.search_status(), file=sys.stderr, flush=True)
+                print(f"bfs not in list {strategy.search_status()}", file=sys.stderr, flush=True)
                 iterations = 0
 
             if memory.get_usage() > memory.max_usage:
@@ -470,6 +497,7 @@ class search_agent(Agent):
                 if not strategy.is_explored(child_state) and not strategy.in_frontier(child_state):
                     strategy.add_to_frontier(child_state)
             iterations += 1
+            _counter += 1
 
     def set_search_strategy(self, heuristic, strategy):
         self.heuristic = heuristic

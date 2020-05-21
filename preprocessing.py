@@ -20,7 +20,7 @@ def create_dijkstras_map(state_: State):
         while True:
 
             if iterations == 1000:
-                print(strategy.search_status(), file=sys.stderr, flush=True)
+                print(f"dijkstras {strategy.search_status()}", file=sys.stderr, flush=True)
                 iterations = 0
 
             if memory.get_usage() > memory.max_usage:
