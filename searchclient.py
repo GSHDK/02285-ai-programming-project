@@ -56,12 +56,9 @@ class SearchClient:
             line = server_messages.readline()
 
         if (line == "#initial\r\n") or line == ("#initial\n"):
-            print("found", file=sys.stderr, flush=True)
             pass
         else:
             line = server_messages.readline()
-
-        print([x for x in line], file=sys.stderr, flush=True)
 
         # Loading in the level
         if not ((line == "#initial\n") or (line == "#initial\r\n")):
@@ -303,7 +300,6 @@ class SearchClient:
             if not_in:
                 dependencies_wrong_order.append([loc])
 
-        print(f'Dependencies wrong order: {dependencies_wrong_order}',file=sys.stderr,flush=True)
 
 
         #Reverse the order and point to a dictionary, so a dependency that were [1,2,3] (1->2->3) becomes
@@ -316,7 +312,6 @@ class SearchClient:
                 else:    
                     self.goal_dependencies[element[i]]=[element[j] for j in reversed(range(i))]
 
-        print(f'Goal dependencies {self.goal_dependencies}',file=sys.stderr,flush=True)
 
         #Reverse lists of wells and tunnels (including the mouths)
 
