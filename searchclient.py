@@ -131,11 +131,20 @@ class SearchClient:
                           flush=True)
                     sys.exit(1)
             row += 1
+
+        print(len(self.initial_state.boxes), file=sys.stderr,flush=True)
+        print(f"box goal count before{len(self.initial_state.boxes_goal)}", file=sys.stderr,flush=True)
+
         preprocessing.convert_unassigned_colors_to_walls(self.initial_state)
+
         self.levelDesigner()
         preprocessing.convert_unassigned_colors_to_walls_connected_comp(self.initial_state)
-        
-        print(f'Done with loading data', file=sys.stderr, flush=True)
+        # remove goallocations found to be inaccesable and therby alread fufilled
+        preprocessing.remove_blocked_locations_from_goals_boxes(self.initial_state)
+        print(len(self.initial_state.boxes), file=sys.stderr,flush=True)
+        print(f"box goal count after{len(self.initial_state.boxes_goal)}", file=sys.stderr,flush=True)
+
+
         # except Exception as ex:
         #     print('Error parsing level: {}.'.format(repr(ex.with_traceback())), file=sys.stderr, flush=True)
         #     sys.exit(1)

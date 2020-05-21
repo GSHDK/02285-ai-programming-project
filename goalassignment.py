@@ -54,11 +54,12 @@ class GoalAssigner(Assigner):
 
         # TODO: Create a update task function to handel dependencies
 
-
         # Creates all potential boxes to be moved
         box_tasks = defaultdict(list)
         used_ids = set()
         for key, value in self.world_state.boxes_goal.items():
+            if key in self.world_state.walls.keys():
+                continue
             # Every goal_location
             for element in value:
                 for box, value_box in self.world_state.boxes.items():
@@ -79,7 +80,6 @@ class GoalAssigner(Assigner):
                                 box_tasks[element] = [key, value_box[0][2]]
                                 _temp_loc = box
                                 _temp_dist = _x
-
                 used_ids.add(box_tasks[element][1])
         
 

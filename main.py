@@ -52,7 +52,6 @@ def main():
     current_state = State(client.initial_state)
     current_state.dijkstras_map = create_dijkstras_map(preprocessing_current_state)
 
-    print(current_state.agents,file=sys.stderr,flush=True)
 
     # Create list of agents
     list_agents = []
@@ -90,7 +89,7 @@ def main():
                 current_state.agents[k][0][2] = agt.agent_internal_id
 
     
-
+    print(len(current_state.boxes),file=sys.stderr,flush=True)
     goal_assigner = GoalAssigner(current_state, goal_dependencies=client.goal_dependencies, list_of_agents=list_agents)
     goal_assigner.reassign_tasks()
 

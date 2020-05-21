@@ -92,6 +92,32 @@ def convert_unassigned_colors_to_walls_connected_comp(world_state:'State'):
     while len(_to_be_popped)>0:
         _pop = _to_be_popped.pop()
         world_state.walls[_pop] = True
+        world_state.boxes.pop(_pop)
         
         # the blackboard works in a way where we are dependent on the internal goal id
         # world_state.boxes.pop(_pop)
+
+def remove_blocked_locations_from_goals_boxes(world_state:'State'):
+
+    _to_be_popped = []
+    for location in world_state.goal_positions.keys():
+        if location in world_state.walls:
+            _to_be_popped.append(location)
+
+    temp_dict=defaultdict(list)
+    for key, value in world_state.boxes_goal.items():
+        for element in value:
+            if element not in world_state.walls:
+                temp_dict[key].append(element)
+    world_state.boxes_goal=temp_dict
+
+
+    while len(_to_be_popped) > 0:
+        _pop = _to_be_popped.pop()
+        box_char = world_state.goal_positions[_pop]
+        if box_char.isdigit():
+            continue
+        world_state.goal_positions.pop(_pop)
+        if _pop in world_state.boxes:
+            world_state.boxes.pop(_pop)
+    print(world_state.boxes_goal, file=sys.stderr, flush=True)

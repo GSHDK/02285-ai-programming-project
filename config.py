@@ -14,7 +14,7 @@ max_replanning_depth=5
 
 max_replanning_steps=max_replanning_depth*2
 
-while_counter = 500
+while_counter = 20
 
 #Random agents variables
 initiate_random_agents = True
