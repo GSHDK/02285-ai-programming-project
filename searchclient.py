@@ -363,7 +363,7 @@ class SearchClient:
 
     def makeWell(self, graph,coordinate,cost,goal_priority_list,well_id):
             
-            if coordinate in self.initial_state.goal_positions:
+            if coordinate in self.initial_state.goal_positions or coordinate in self.initial_state.boxes:
                 goal_priority_list.append(coordinate)
 
             #Recursively find and identify wells
