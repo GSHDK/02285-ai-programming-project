@@ -17,6 +17,10 @@ class Heuristic(metaclass=ABCMeta):
     def __repr__(self):
         raise NotImplementedError
 
+    @abstractmethod
+    def f(self, state: 'State'):
+        raise NotImplementedError
+
     # add g value to make this the correct value
     def h(self, state: 'State') -> 'int':
         return self.heuristic_function(self, state, self.dist_function) + state.g
@@ -26,9 +30,11 @@ class AStar(Heuristic):
     def __init__(self, initial_state: 'State', heuristic_function, **kwargs):
         super().__init__(initial_state, heuristic_function, **kwargs)
 
+    def h(self, state: 'State') -> 'int':
+        return self.heuristic_function(self, state, self.dist_function)
+
     def f(self, state: 'State') -> 'int':
-        h_ = self.h(state)
-        return state.g + h_
+        return state.g + self.h(state)
 
     def __repr__(self):
         return 'A* evaluation'
