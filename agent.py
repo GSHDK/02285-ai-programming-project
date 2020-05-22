@@ -104,7 +104,8 @@ class search_agent(Agent):
                 return False
 
             if iterations == 1000:
-                print(f"search to box {strategy.search_status()}", file=sys.stderr, flush=True)
+                if _cfg.testing:
+                    print(f"search to box {strategy.search_status()}", file=sys.stderr, flush=True)
                 iterations = 0
 
             if memory.get_usage() > memory.max_usage:
@@ -145,7 +146,8 @@ class search_agent(Agent):
 
         # In case where
 
-        print(f'Search with box: box_from: {box_from}, box_id = {self.current_box_id}', file=sys.stderr)
+        if _cfg.testing:
+            print(f'Search with box: box_from: {box_from}, box_id = {self.current_box_id}', file=sys.stderr)
 
         if world_state.boxes[box_from][0][0] != self.agent_color:
             raise Exception("Agent cannot move this box")
@@ -185,16 +187,19 @@ class search_agent(Agent):
                 return False
 
             if iterations == 1000:
-                print(f"with box{strategy.search_status()}", file=sys.stderr, flush=True)
+                if _cfg.testing:
+                    print(f"with box{strategy.search_status()}", file=sys.stderr, flush=True)
                 iterations = 0
 
             if memory.get_usage() > memory.max_usage:
-                print('Maximum memory usage exceeded.', file=sys.stderr, flush=True)
+                if _cfg.testing:
+                    print('Maximum memory usage exceeded.', file=sys.stderr, flush=True)
                 return None
 
             if strategy.frontier_empty():
-                print(f'{self.agent_char}', file=sys.stderr, flush=True)
-                print(f'empty frontier search with box', file=sys.stderr, flush=True)
+                if _cfg.testing:
+                    print(f'{self.agent_char}', file=sys.stderr, flush=True)
+                    print(f'empty frontier search with box', file=sys.stderr, flush=True)
                 return None
 
             leaf = strategy.get_and_remove_leaf()
@@ -219,7 +224,6 @@ class search_agent(Agent):
             raise Exception("No values for agent ")
 
         self.world_state = State(world_state)
-        print('Starting search with strategy {}.'.format(self.strategy), file=sys.stderr, flush=True)
 
         # TODO: CHECK IF STRATEGY REFERS TO THE SAME OBJECT BEFORE IMPLEMENTING MULTI PROC
 
@@ -254,16 +258,19 @@ class search_agent(Agent):
                 return False
 
             if iterations == 1000:
-                print(f"search pos {strategy.search_status()}", file=sys.stderr, flush=True)
+                if _cfg.testing:
+                    print(f"search pos {strategy.search_status()}", file=sys.stderr, flush=True)
                 iterations = 0
 
             if memory.get_usage() > memory.max_usage:
-                print('Maximum memory usage exceeded.', file=sys.stderr, flush=True)
+                if _cfg.testing:
+                    print('Maximum memory usage exceeded.', file=sys.stderr, flush=True)
                 return None
 
             if strategy.frontier_empty():
-                print(f'{self.agent_char}', file=sys.stderr, flush=True)
-                print('Empty frontier search pos', file=sys.stderr, flush=True)
+                if _cfg.testing:
+                    print(f'{self.agent_char}', file=sys.stderr, flush=True)
+                    print('Empty frontier search pos', file=sys.stderr, flush=True)
 
                 return None
 
@@ -325,19 +332,22 @@ class search_agent(Agent):
                 return None
 
             if iterations == 1000:
-                print(f"replanner H{strategy.search_status()}", file=sys.stderr, flush=True)
+                if _cfg.testing:
+                    print(f"replanner H{strategy.search_status()}", file=sys.stderr, flush=True)
                 iterations = 0
                 
 
             if memory.get_usage() > memory.max_usage:
-                print('Maximum memory usage exceeded.', file=sys.stderr, flush=True)
+                if _cfg.testing:
+                    print('Maximum memory usage exceeded.', file=sys.stderr, flush=True)
                 for loc in blocked_locations: 
                     row,col = loc.split(",")
                     self.world_state.walls.pop(f'{row},{col}')
                 return None
 
             if strategy.frontier_empty():
-                print('Empty frontier search heuristic', file=sys.stderr, flush=True)
+                if _cfg.testing:
+                    print('Empty frontier search heuristic', file=sys.stderr, flush=True)
                 # finished searchspace without sol
                 for loc in blocked_locations: 
                     row,col = loc.split(",")
@@ -362,7 +372,6 @@ class search_agent(Agent):
             #strategy.explored.add(x)
             for child_state in leaf.get_children(self.agent_char):
                 if not strategy.is_explored(child_state) and not strategy.in_frontier(child_state) and not (child_state.g  > _cfg.max_replanning_steps):
-                    #print(f'XX h= {strategy.heuristic.h(leaf)}, g = {child_state.g} child_state {child_state}',file=sys.stderr,flush=True)
                     strategy.add_to_frontier(child_state)
             iterations += 1
             _counter += 1
@@ -447,25 +456,25 @@ class search_agent(Agent):
                 return False
 
             if iterations == 1000:
-                print(f"bfs not in list {strategy.search_status()}", file=sys.stderr, flush=True)
+                if _cfg.testing:
+                    print(f"bfs not in list {strategy.search_status()}", file=sys.stderr, flush=True)
                 iterations = 0
 
             if memory.get_usage() > memory.max_usage:
-                print('Maximum memory usage exceeded.', file=sys.stderr, flush=True)
+                if _cfg.testing:
+                    print('Maximum memory usage exceeded.', file=sys.stderr, flush=True)
                 return None
 
             if strategy.frontier_empty():
-                print('Empty frontier BFS NOT IN LIST', file=sys.stderr, flush=True)
-                print(f'{self.agent_char}', file=sys.stderr, flush=True)
-
-
+                if _cfg.testing:
+                    print('Empty frontier BFS NOT IN LIST', file=sys.stderr, flush=True)
+                    print(f'{self.agent_char}', file=sys.stderr, flush=True)
                 ''' 
                 # TODO: Could not find a location where agent is not "in the way" - return something that triggers
                 the other collision object to move out of the way
                 '''
                 
                 return False
-                raise NotImplementedError()
 
             leaf = strategy.get_and_remove_leaf()
 
@@ -493,9 +502,6 @@ class search_agent(Agent):
             for child_state in leaf.get_children(
                     self.agent_char, move_allowed=move_action_allowed):  # The list of expanded states is shuffled randomly;
 
-                # print("child box location value{}".format(child_state.boxes), file=sys.stderr, flush=True)
-                # print("set value{}".format(x.__hash__()), file=sys.stderr, flush=True)
-                # print("child value{}".format(child_state.__hash__()), file=sys.stderr, flush=True)
                 if not strategy.is_explored(child_state) and not strategy.in_frontier(child_state):
                     strategy.add_to_frontier(child_state)
             iterations += 1

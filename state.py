@@ -81,10 +81,12 @@ class State:
             self.wells_reverse = defaultdict(list)
 
             self.redirecter_search =False
+            self.levelname='INIT'
 
 
         else:
             self.walls = copy.walls
+            self.levelname = copy.levelname
             self.goal_positions = copy.goal_positions
             self.parent = copy.parent
             self.action = copy.action
@@ -247,11 +249,6 @@ class State:
             new_agent_position = [old_agent_location[0] + action.agent_dir.d_row,
                                   old_agent_location[1] + action.agent_dir.d_col]
             new_agent_location_string = f'{new_agent_position[0]},{new_agent_position[1]}'
-
-            # print(old_agent_location, file=sys.stderr, flush=True)
-            # print(new_agent_location_string, file=sys.stderr, flush=True)
-            # print(self.is_free(new_agent_location_string), file=sys.stderr, flush=True)
-
 
             if self.is_free(new_agent_location_string):
                 child = State(copy=self)

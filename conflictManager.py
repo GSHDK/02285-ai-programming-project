@@ -288,7 +288,8 @@ class ConflictManager:
                                                 else:
                                                     self.agent_amnesia(agt)
                                             else:
-                                                print(f'getting amnesai {agt.agent_char}', file=sys.stderr)
+                                                if config.testing:
+                                                    print(f'getting amnesai {agt.agent_char}', file=sys.stderr)
                                                 self.agent_amnesia(agt)
                                         else:
                                             #One agent has bee found as helper.
@@ -465,7 +466,8 @@ class ConflictManager:
                                                 else:
                                                     self.agent_amnesia(agt)
                                             else:
-                                                print(f'getting amnesai {agt.agent_char}', file=sys.stderr)
+                                                if config.testing:
+                                                    print(f'getting amnesai {agt.agent_char}', file=sys.stderr)
                                                 self.agent_amnesia(agt)
                                         else:
                                             #One agent has been found as helper.
@@ -591,7 +593,8 @@ class ConflictManager:
                                             #idx hits a box, ask for help to move this box:
                                             
                                             helper_agt = self._determine_helper_agent(blackboard[0][v_id],blackboard,agents)
-                                            print(f'getting amnesai {helper_agt}', file=sys.stderr)
+                                            if config.testing:
+                                                print(f'getting amnesai {helper_agt}', file=sys.stderr)
 
                                             #If no agent was found, just wait until someone becomes available
                                             if helper_agt is None:
@@ -639,7 +642,8 @@ class ConflictManager:
                                                     else:
                                                         self.agent_amnesia(agt)
                                                 else:
-                                                    print(f'getting amnesai {agt.agent_char}', file=sys.stderr)
+                                                    if config.testing:
+                                                        print(f'getting amnesai {agt.agent_char}', file=sys.stderr)
                                                     self.agent_amnesia(agt)
 
                                                 #TODO: not final

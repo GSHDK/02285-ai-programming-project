@@ -3,6 +3,7 @@ from state import State
 from collections import defaultdict
 import memory
 import sys
+from config import testing
 
 
 def create_dijkstras_map(state_: State):
@@ -20,11 +21,13 @@ def create_dijkstras_map(state_: State):
         while True:
 
             if iterations == 1000:
-                print(f"dijkstras {strategy.search_status()}", file=sys.stderr, flush=True)
+                if testing:
+                    print(f"dijkstras {strategy.search_status()}", file=sys.stderr, flush=True)
                 iterations = 0
 
             if memory.get_usage() > memory.max_usage:
-                print('Maximum memory usage exceeded.', file=sys.stderr, flush=True)
+                if testing:
+                    print('Maximum memory usage exceeded.', file=sys.stderr, flush=True)
                 raise Exception('Maximum mem used')
 
             if strategy.frontier_empty():
@@ -120,4 +123,3 @@ def remove_blocked_locations_from_goals_boxes(world_state:'State'):
         world_state.goal_positions.pop(_pop)
         if _pop in world_state.boxes:
             world_state.boxes.pop(_pop)
-    print(world_state.boxes_goal, file=sys.stderr, flush=True)

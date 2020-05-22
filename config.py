@@ -15,7 +15,7 @@ max_replanning_depth=5
 
 max_replanning_steps=max_replanning_depth*2
 
-while_counter = 100
+while_counter = 10000
 
 # This is the maximum amount of nodes allowed to explored
 max_search_depth = 2000
@@ -29,13 +29,11 @@ seed = 899 # best atm
 seed = 17
 
 
-
-
-
-
 no_task=1
 goal_assigner_location=2
 goal_assigner_box=3
 awaiting_help = 4
 self_helping = 5
 solving_help_task = 6
+
+testing = False

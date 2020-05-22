@@ -4,6 +4,7 @@ from utils import cityblock_distance
 import sys
 from action import ActionType, Action
 import config
+import utils
 
 '''
 The goal of the assigner is from a given goal state
@@ -84,8 +85,6 @@ class GoalAssigner(Assigner):
         
 
         agent_tasks = self.world_state.agents_goal
-        # TODO: print
-        #print(f'GOAL TASKS:\n agent : {agent_tasks} \n box : {box_tasks}', flush=True , file=sys.stderr)
         return box_tasks, agent_tasks
 
     def reassign_tasks(self):
@@ -99,7 +98,15 @@ class GoalAssigner(Assigner):
                 if self.world_state.boxes[task][0][2] == values[1]:
                     # Save the task_id (goal_location)
                     solved_tasks.add(task)
-        
+
+        for agent_char, location_list in self.agent_tasks.items():
+            _loc = utils._get_agt_loc(self.world_state,agent_char)
+            if _loc == location_list[0]:
+                for _agt in self.agents:
+                    if _agt.agent_char == agent_char and _agt.plan_category == config.goal_assigner_location:
+                        solved_tasks.add(location_list[0])
+                        _agt.agent_amnesia()
+                        break
 
         # Find what jobs are currently getting executed
         current_execution = set()
@@ -241,7 +248,7 @@ class GoalAssigner(Assigner):
             else:
                 # No possible assignments found for agent
                 # TODO: CORRECT STATE
-                agent.plan_category = 1
+                agent.agent_amnesia()
 
                 # TODO: Decide where the noop actions should be placed
                 agent.plan.append(Action(ActionType.NoOp, None, None))

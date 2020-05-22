@@ -141,11 +141,6 @@ class SearchClient:
 
 
 
-        # except Exception as ex:
-        #     print('Error parsing level: {}.'.format(repr(ex.with_traceback())), file=sys.stderr, flush=True)
-        #     sys.exit(1)
-
-
     def levelDesigner(self):
 
         connection_graph = defaultdict(list)
@@ -198,10 +193,6 @@ class SearchClient:
         #Flatten list of coordinates to remove
         all_remove = list(chain.from_iterable(to_remove))
 
-        #print('to_remove', file=sys.stderr, flush=True)
-        #print(to_remove, file=sys.stderr, flush=True)
-        #print('relevant_level',file=sys.stderr, flush=True)
-        #print(relevant_level,file=sys.stderr, flush=True)
 
 
 

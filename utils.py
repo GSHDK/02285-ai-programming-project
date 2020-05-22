@@ -24,7 +24,6 @@ def _get_agt_loc(state, agent_char):
     for key, value in state.agents.items():
         if int(value[0][1]) == int(agent_char):
             return key
-    print(state.agents, file=sys.stderr, flush=True)
     raise Exception('Agent not found')
 
 

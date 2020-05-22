@@ -89,7 +89,6 @@ class Replanner(metaclass=ABCMeta):
             # To prevent too far replanning
             # TODO: make dependent on level size
             if action_counter > config.max_replanning_depth:
-                print("&&&&&&&&& replanning limit reached", file=sys.stderr, flush=True)
                 return False
 
             if action.action_type is ActionType.Move:
@@ -229,8 +228,7 @@ class Replanner(metaclass=ABCMeta):
         if not _replanned:
             #raise Exception('Goal location blocked or unreachable')
             return False
-        # print(agent.plan, file=sys.stderr, flush=True)
-        # self.color_goals = self.create_color_goals()
+
 
 def merge_agent_plans(agent, temp_replan, action_counter):
     while action_counter > 0:

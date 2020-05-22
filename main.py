@@ -13,6 +13,8 @@ from copy import deepcopy as cp
 from preprocessing import create_dijkstras_map
 from action import MOVE_ACTIONS
 from random import shuffle
+from config import testing
+
 
 def main():
 
@@ -128,44 +130,46 @@ def main():
         7. Update the world states in the different elements
 
         '''
-        print(f'-----------------------{counter}-----------------------',file=sys.stderr,flush=True)
+        if testing:
+            print(f'-----------------------{counter}-----------------------',file=sys.stderr,flush=True)
 
         # TODO: Check subgoal for agents - does it need to be updated
 
         # Keeps it from getting out of hand while testing
         if counter == config.while_counter:
-            break
+            exit()
 
-        for e in list_agents:
-            if len(e.plan) > 0:
-                # print(f'{e.agent_char} plan:{e.plan}', flush=True, file=sys.stderr)
-                print(f'{e.plan[0]} {e.agent_char} before goal length: {len(e.plan)} category:{e.plan_category} help from: {e.helper_id} int well {e.in_well_await}', file=sys.stderr, flush=True)
-            else:
-                print(f'NoPlan for {e.agent_char} before goal length: {len(e.plan)} category:{e.plan_category} help from: {e.helper_id} int well {e.in_well_await}', file=sys.stderr, flush=True)
-        print(f'\n',file=sys.stderr, flush=True)
+        if testing:
+            for e in list_agents:
+                if len(e.plan) > 0:
+                    print(f'{e.agent_char} plan:{e.plan}', flush=True, file=sys.stderr)
+                    print(f'{e.plan[0]} {e.agent_char} before goal length: {len(e.plan)} category:{e.plan_category} help from: {e.helper_id} int well {e.in_well_await}', file=sys.stderr, flush=True)
+                else:
+                    print(f'NoPlan for {e.agent_char} before goal length: {len(e.plan)} category:{e.plan_category} help from: {e.helper_id} int well {e.in_well_await}', file=sys.stderr, flush=True)
+            print(f'\n',file=sys.stderr, flush=True)
 
         # Give task to unassigned agents
         goal_assigner.reassign_tasks()
-        
-        for e in list_agents:
-            if len(e.plan) > 0:
-                # print(f'{e.agent_char} plan:{e.plan}', flush=True, file=sys.stderr)
-                print(f'>>{e.plan[0]} {e.agent_char} after goal length: {len(e.plan)} category:{e.plan_category} help from: {e.helper_id} int well {e.in_well_await}', file=sys.stderr, flush=True)
-            else:
-                print(f'>>NoPlan for {e.agent_char} after goal length: {len(e.plan)} category:{e.plan_category} help from: {e.helper_id} int well {e.in_well_await}', file=sys.stderr, flush=True)
-        print(f'\n',file=sys.stderr, flush=True)
+
+        if testing:
+            for e in list_agents:
+                if len(e.plan) > 0:
+                    # print(f'{e.agent_char} plan:{e.plan}', flush=True, file=sys.stderr)
+                    print(f'>>{e.plan[0]} {e.agent_char} after goal length: {len(e.plan)} category:{e.plan_category} help from: {e.helper_id} int well {e.in_well_await}', file=sys.stderr, flush=True)
+                else:
+                    print(f'>>NoPlan for {e.agent_char} after goal length: {len(e.plan)} category:{e.plan_category} help from: {e.helper_id} int well {e.in_well_await}', file=sys.stderr, flush=True)
+            print(f'\n',file=sys.stderr, flush=True)
 
 
         conflict_manager.blackboard_conflictSolver(list_agents)
 
-
-
-        for e in list_agents:
-            if len(e.plan) > 0:
-                # print(f'{e.agent_char} plan:{e.plan}', flush=True, file=sys.stderr)
-                print(f'>>{e.plan[0]} {e.agent_char} after conflict length: {len(e.plan)} category:{e.plan_category} helping:{e.helper_agt_requester_id}, help from: {e.helper_id} int well {e.in_well_await}', file=sys.stderr, flush=True)
-            else:
-                print(f'>>NoPlan for {e.agent_char} after conflict length: {len(e.plan)} category:{e.plan_category}, helping:{e.helper_agt_requester_id}, help from: {e.helper_id} int well {e.in_well_await}', file=sys.stderr, flush=True)
+        if testing:
+            for e in list_agents:
+                if len(e.plan) > 0:
+                    # print(f'{e.agent_char} plan:{e.plan}', flush=True, file=sys.stderr)
+                    print(f'>>{e.plan[0]} {e.agent_char} after conflict length: {len(e.plan)} category:{e.plan_category} helping:{e.helper_agt_requester_id}, help from: {e.helper_id} int well {e.in_well_await}', file=sys.stderr, flush=True)
+                else:
+                    print(f'>>NoPlan for {e.agent_char} after conflict length: {len(e.plan)} category:{e.plan_category}, helping:{e.helper_agt_requester_id}, help from: {e.helper_id} int well {e.in_well_await}', file=sys.stderr, flush=True)
 
 
 
@@ -189,14 +193,12 @@ def main():
                 if _awaiting_done:
                     x.nested_help=False
 
-        # for e in list_agents:
-        #     if len(e.plan) > 0:
-        #         print(f'{e.plan[0]} {e.agent_char} after conflict ', file=sys.stderr, flush=True)
-        #     else:
-        #         print(f'NoPlan for {e.agent_char} after conflict', file=sys.stderr, flush=True)
-
-        # print(f'- world_state agents before actions:  {current_state.agents}',file=sys.stderr,flush=True)
-        # print(f'- world_state boxes before actions:  {current_state.boxes}',file=sys.stderr,flush=True)
+        if testing:
+            for e in list_agents:
+                if len(e.plan) > 0:
+                    print(f'{e.plan[0]} {e.agent_char} after conflict ', file=sys.stderr, flush=True)
+                else:
+                    print(f'NoPlan for {e.agent_char} after conflict', file=sys.stderr, flush=True)
     
 
         #TODO: Sync here with deleted agents and get their latest actions
@@ -281,7 +283,10 @@ def main():
         print(my_string, flush=True)
         # getting the data from the client to asses validity of actions
         response = server_messages.readline().rstrip()
-        print(response, file=sys.stderr, flush=True)
+
+        if testing:
+            print(response, file=sys.stderr, flush=True)
+
         for resp in response.split(";"):
             if resp == 'false':
                 raise Exception("[FATAL ERROR] received false response from server")
@@ -293,10 +298,9 @@ def main():
 
 
         if current_state.world_is_goal_state():
-            print("Done", file=sys.stderr, flush=True)
-            raise Exception('SHOULD BE DONE - but something went wrong')
-            break
-        
+            print(f"Done with {current_state.levelname} actions used {counter}", file=sys.stderr, flush=True)
+            exit()
+
         # Update the states of goalassigner and conflictmanager
         conflict_manager.world_state = State(current_state)
         GoalAssigner.world_state = State(current_state)
@@ -305,7 +309,11 @@ def main():
         for ct, agt in enumerate(list_agents_full):
             agent_prev_category[ct] = agt.plan_category
 
-        print("\n", file=sys.stderr, flush=True)
+        if testing:
+            print("\n", file=sys.stderr, flush=True)
+
+
+        # Stop search from going out for control
         counter += 1
 
 
