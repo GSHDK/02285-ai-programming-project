@@ -211,6 +211,21 @@ class GoalAssigner(Assigner):
                     continue
                 assignments[best_element] = element
             else:
+                if element.plan_category == config.awaiting_help:
+                    for _ele in self.agents:
+                        # make _ele it's helper
+                        if _ele.agent_char == element.helper_id[0]:
+                            break
+                # Is it still solving the help task related to this agent
+                    if _ele.helper_agt_requester_id == element.agent_char:
+                        element.plan.appendleft(Action(ActionType.NoOp, None, None))
+                        continue
+                    else:
+                        element.agent_amnesia()
+
+
+
+
                 '''
                 Karen well fix - CURRENTLY NOT SUPPORTED
                 '''

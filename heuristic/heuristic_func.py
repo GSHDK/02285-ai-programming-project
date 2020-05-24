@@ -63,13 +63,13 @@ def h_goalassigner_pos(self: 'Heuristic', state: 'State', dist_function) -> 'int
     agent_location = _get_agt_loc(state, self.data['agent_char'])
 
     # Fix for using h to determine goal
-    if dist_function(agent_location, self.data['agent_to']) == 0:
+    if state.dijkstras_map[(self.data['agent_to'], agent_location)] == 0:
         return 0
 
     if config.goal_location_evasion and agent_location in state.goal_positions.keys():
-        return dist_function(agent_location, self.data['agent_to']) + config.goal_location_evasion_length
+        return state.dijkstras_map[(self.data['agent_to'], agent_location)] + config.goal_location_evasion_length
     else:
-        return dist_function(agent_location, self.data['agent_to'])
+        return state.dijkstras_map[(self.data['agent_to'], agent_location)]
 
 
 def h_goalassigner_to_box(self: 'Heuristic', state: 'State', dist_function) -> 'int':

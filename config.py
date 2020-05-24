@@ -18,7 +18,7 @@ max_replanning_steps=max_replanning_depth*2
 while_counter = 10000
 
 # This is the maximum amount of nodes allowed to explored
-max_search_depth = 2000
+max_search_depth = inf
 
 #Random agents variables
 initiate_random_agents = True
@@ -27,18 +27,22 @@ agent_max_stall = 5
 #FOR OUR OWN LEVEL, seed = 88
 seed = 899 # best atm
 seed = 17 # used for uploaded results
+seed = 300
 
 # The different states agents can be in
 no_task=1
-goal_assigner_location=2
-goal_assigner_box=3
+goal_assigner_location = 2
+goal_assigner_box = 3
 awaiting_help = 4
 self_helping = 5
 solving_help_task = 6
 
 # For testing
-testing = False
+testing = True
 
 # goal_location evasion heuristic
-goal_location_evasion = False
-goal_location_evasion_length = 4
+goal_location_evasion = True
+goal_location_evasion_length = 5
+
+# Disable replanning
+replanning_allowed = False

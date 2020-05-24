@@ -31,6 +31,10 @@ class Replanner(metaclass=ABCMeta):
         :param blocked_location:
         :return:
         '''
+
+        if not config.replanning_allowed:
+            return False
+
         self.world_state = State(world_state)
         assigned_box = agent.current_box_id
 

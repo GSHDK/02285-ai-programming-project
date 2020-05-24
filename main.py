@@ -189,18 +189,11 @@ def main():
                     if x.helper_id is None:
                         x.agent_amnesia()
                         break
-                    if x.helper_id[0]==y.helper_agt_requester_id and x.agent_char!=y.agent_char:
+                    if x.helper_id[0] == y.helper_agt_requester_id and x.agent_char!=y.agent_char:
                         x.plan.appendleft(Action(ActionType.NoOp, None, None))
-                        _awaiting_done=False
+                        _awaiting_done = False
                 if _awaiting_done:
-                    x.nested_help=False
-
-        if testing:
-            for e in list_agents:
-                if len(e.plan) > 0:
-                    print(f'{e.plan[0]} {e.agent_char} after conflict ', file=sys.stderr, flush=True)
-                else:
-                    print(f'NoPlan for {e.agent_char} after conflict', file=sys.stderr, flush=True)
+                    x.nested_help = False
     
 
         #TODO: Sync here with deleted agents and get their latest actions
