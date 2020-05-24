@@ -15,7 +15,7 @@ max_replanning_depth=5
 
 max_replanning_steps=max_replanning_depth*2
 
-while_counter = 10000
+while_counter = 100
 
 # This is the maximum amount of nodes allowed to explored
 max_search_depth = inf
@@ -27,10 +27,9 @@ agent_max_stall = 5
 #FOR OUR OWN LEVEL, seed = 88
 seed = 899 # best atm
 seed = 17 # used for uploaded results
-seed = 300
 
 # The different states agents can be in
-no_task=1
+no_task = 1
 goal_assigner_location = 2
 goal_assigner_box = 3
 awaiting_help = 4
@@ -46,3 +45,6 @@ goal_location_evasion_length = 5
 
 # Disable replanning
 replanning_allowed = False
+
+# Enable pending for task while keeping plan - used in line 218 in goalassigner
+plan_wait_for_help_finish = False

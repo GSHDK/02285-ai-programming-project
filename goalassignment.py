@@ -150,7 +150,11 @@ class GoalAssigner(Assigner):
                     element.pending_task_func(**element.pending_task_dict)
                     element.pending_task_bool=False
                     continue
-                
+
+                # Give agent a single noop before resuming plan to allow for not errors
+                if element.goal_job_id == config.solving_help_task:
+                    element._reset_from_help()
+                    element.plan.appendleft(Action(ActionType.NoOp, None, None))
 
                 if element.goal_job_id not in current_execution and element.plan_category != config.awaiting_help:
                     element._reset_from_help()
@@ -211,17 +215,18 @@ class GoalAssigner(Assigner):
                     continue
                 assignments[best_element] = element
             else:
-                if element.plan_category == config.awaiting_help:
-                    for _ele in self.agents:
-                        # make _ele it's helper
-                        if _ele.agent_char == element.helper_id[0]:
-                            break
-                # Is it still solving the help task related to this agent
-                    if _ele.helper_agt_requester_id == element.agent_char:
-                        element.plan.appendleft(Action(ActionType.NoOp, None, None))
-                        continue
-                    else:
-                        element.agent_amnesia()
+                if config.plan_wait_for_help_finish:
+                    if element.plan_category == config.awaiting_help:
+                        for _ele in self.agents:
+                            # make _ele it's helper
+                            if _ele.agent_char == element.helper_id[0]:
+                                break
+                    # Is it still solving the help task related to this agent
+                        if _ele.helper_agt_requester_id == element.agent_char:
+                            element.plan.appendleft(Action(ActionType.NoOp, None, None))
+                            continue
+                        else:
+                            element.agent_amnesia()
 
 
 
