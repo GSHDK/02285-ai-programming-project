@@ -1,5 +1,4 @@
 import argparse
-import re
 import sys
 import memory
 import config
@@ -119,7 +118,6 @@ def main():
     # Whileloop
     counter = 0
     while True:
-        print(f"{counter} \n {len(current_state.walls)} \n\n", file=sys.stderr, flush=True)
 
         '''
         Process of control loop

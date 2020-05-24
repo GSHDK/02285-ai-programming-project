@@ -26,9 +26,9 @@ agent_max_stall = 5
 
 #FOR OUR OWN LEVEL, seed = 88
 seed = 899 # best atm
-seed = 17
+seed = 17 # used for uploaded results
 
-
+# The different states agents can be in
 no_task=1
 goal_assigner_location=2
 goal_assigner_box=3
@@ -36,4 +36,9 @@ awaiting_help = 4
 self_helping = 5
 solving_help_task = 6
 
+# For testing
 testing = False
+
+# goal_location evasion heuristic
+goal_location_evasion = False
+goal_location_evasion_length = 4

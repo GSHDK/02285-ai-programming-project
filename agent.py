@@ -117,9 +117,6 @@ class search_agent(Agent):
 
             leaf = strategy.get_and_remove_leaf()
 
-
-
-
             # We are now adjecent to the box
             if strategy.heuristic.h(leaf) == 1:
                 self._convert_plan_to_action_list(leaf.extract_plan())
